@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GridCraft - Coordinate Grid & Math Worksheet Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'monospace'],
+                        hand: ['Caveat', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 1);
+        }
+        
+        svg text {
+            user-select: none;
+        }
+        
+        .checkerboard-bg {
+            background-color: #0f172a;
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+                              linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 24px 24px;
+            background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+        }
+
+        /* Direct Print Stylesheet */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                overflow: visible !important;
+            }
+            header, aside, .no-print, #interactiveStatus, .workspace-bar {
+                display: none !important;
+            }
+            main {
+                background: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+            #previewViewport {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #svgContainerWrapper {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+            .grid-svg-item {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-hidden select-none">
+
+    <header class="h-14 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-4 z-20 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 font-bold text-lg">
+                <i class="fa-solid fa-border-top-left font-mono"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base tracking-tight text-white flex items-center gap-2">
+                    GridCraft <span class="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">Coordinate Studio</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- Mode Selector Switch -->
+        <div class="hidden md:flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 text-xs">
+            <button id="modeSingleBtn" onclick="setLayoutMode('single')" class="px-3 py-1.5 rounded-md font-medium transition-all bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-square"></i> Single Grid Focus
+            </button>
+            <button id="modeWorksheetBtn" onclick="setLayoutMode('worksheet')" class="px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-file-lines"></i> Multi-Grid Sheet
+            </button>
+        </div>
+
+        <!-- Action Header Controls -->
+        <div class="flex items-center space-x-2">
+            <button onclick="resetAll()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+            <div class="h-4 w-px bg-slate-800"></div>
+            <button onclick="openExportModal()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs rounded-lg shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> Export & Print
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <aside class="w-80 md:w-96 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 z-10">
+            <!-- Sidebar Navigation Tabs -->
+            <div class="flex border-b border-slate-800 text-xs font-medium text-slate-400 bg-slate-950">
+                <button onclick="switchTab('grid')" id="tab-grid" class="flex-1 py-3 px-2 border-b-2 border-blue-500 text-blue-400 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-border-all"></i> Grid Setup
+                </button>
+                <button onclick="switchTab('style')" id="tab-style" class="flex-1 py-3 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-palette"></i> Style
+                </button>
+                <button onclick="switchTab('plots')" id="tab-plots" class="flex-1 py-3 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-draw-polygon"></i> Objects
+                </button>
+                <button onclick="switchTab('sheet')" id="tab-sheet" class="flex-1 py-3 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-file-invoice"></i> Page Layout
+                </button>
+            </div>
+
+            <!-- Sidebar Scrollable Container -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-6 text-sm text-slate-300">
+
+                <!-- TAB 1: GRID SETUP -->
+                <div id="content-grid" class="space-y-5">
+                    <!-- Preset Selection -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Quick Range Presets</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="applyPreset('standard')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                                <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
+                                    <i class="fa-solid fa-table-cells text-blue-400"></i> Standard 4-Quad
+                                </div>
+                                <span class="text-[10px] text-slate-500">-10 to 10 (Step 1)</span>
+                            </button>
+                            <button onclick="applyPreset('q1')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                                <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
+                                    <i class="fa-solid fa-chart-line text-indigo-400"></i> Quadrant I
+                                </div>
+                                <span class="text-[10px] text-slate-500">0 to 12 (Elementary)</span>
+                            </button>
+                            <button onclick="applyPreset('dense')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                                <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
+                                    <i class="fa-solid fa-grid-2 text-emerald-400"></i> High-Density
+                                </div>
+                                <span class="text-[10px] text-slate-500">-20 to 20 (Step 2)</span>
+                            </button>
+                            <button onclick="applyPreset('dot')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                                <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
+                                    <i class="fa-solid fa-ellipsis text-amber-400"></i> Dot Matrix
+                                </div>
+                                <span class="text-[10px] text-slate-500">Geoboard / Points</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- X-Axis Bounds -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-xs text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrows-left-right"></i> X-Axis Limits
+                            </span>
+                            <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
+                                <input type="checkbox" id="lockAspect" onchange="toggleLockAspect(this.checked)" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                                Square Aspect
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">X Min</label>
+                                <input type="number" id="xMin" value="-10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">X Max</label>
+                                <input type="number" id="xMax" value="10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Tick Step</label>
+                                <input type="number" id="xStep" value="1" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Y-Axis Bounds -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrows-up-down"></i> Y-Axis Limits
+                        </span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y Min</label>
+                                <input type="number" id="yMin" value="-10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y Max</label>
+                                <input type="number" id="yMax" value="10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Tick Step</label>
+                                <input type="number" id="yStep" value="1" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Minor Subdivisions & Pattern -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Subdivisions & Lines</label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                                <label class="text-[11px] text-slate-400 block mb-1">Subdivisions / Step</label>
+                                <select id="subdivisions" onchange="updateConfig('subdivisions', parseInt(this.value))" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-white focus:border-blue-500 outline-none">
+                                    <option value="1">None (1x)</option>
+                                    <option value="2" selected>2 (Halves)</option>
+                                    <option value="5">5 (Fifths)</option>
+                                    <option value="10">10 (Tenths)</option>
+                                </select>
+                            </div>
+                            <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                                <label class="text-[11px] text-slate-400 block mb-1">Grid Type</label>
+                                <select id="gridType" onchange="updateConfig('gridType', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-white focus:border-blue-500 outline-none">
+                                    <option value="lines">Solid Grid Lines</option>
+                                    <option value="dashed">Dashed Lines</option>
+                                    <option value="dots">Dot Grid</option>
+                                    <option value="none">Axes Only</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visibility Toggles -->
+                    <div class="space-y-2 pt-2 border-t border-slate-800">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Axes & Labels Visibility</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showXAxis" checked onchange="updateConfig('showXAxis', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Show X-Axis
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showYAxis" checked onchange="updateConfig('showYAxis', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Show Y-Axis
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showXNumbers" checked onchange="updateConfig('showXNumbers', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                X Numbers
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showYNumbers" checked onchange="updateConfig('showYNumbers', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Y Numbers
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showArrows" checked onchange="updateConfig('showArrows', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Axis Arrowheads
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showOrigin" checked onchange="updateConfig('showOrigin', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Origin '0'
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showBorder" onchange="updateConfig('showBorder', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Outer Frame
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showMinorGrid" checked onchange="updateConfig('showMinorGrid', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Minor Sub-grid
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: STYLE & THEMES -->
+                <div id="content-style" class="hidden space-y-5">
+                    <!-- Themes -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Preset Themes</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setTheme('classic')" class="p-2.5 rounded-lg border border-slate-800 bg-white text-slate-900 hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>Academic Minimal</span>
+                                    <span class="w-3 h-3 rounded-full bg-slate-900 inline-block border border-slate-300"></span>
+                                </div>
+                                <span class="text-[10px] text-slate-500">High contrast for printing</span>
+                            </button>
+                            <button onclick="setTheme('slate')" class="p-2.5 rounded-lg border border-slate-800 bg-slate-900 text-white hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>Modern Dark</span>
+                                    <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">Crisp sleek dark screen style</span>
+                            </button>
+                            <button onclick="setTheme('blueprint')" class="p-2.5 rounded-lg border border-slate-800 bg-blue-900 text-blue-100 hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>Blueprint</span>
+                                    <span class="w-3 h-3 rounded-full bg-cyan-400 inline-block"></span>
+                                </div>
+                                <span class="text-[10px] text-blue-300">Technical white on blue</span>
+                            </button>
+                            <button onclick="setTheme('chalkboard')" class="p-2.5 rounded-lg border border-slate-800 bg-emerald-900 text-emerald-100 hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>Chalkboard</span>
+                                    <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
+                                </div>
+                                <span class="text-[10px] text-emerald-300">Classroom board style</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Typography -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Typography & Labels</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Font Family</label>
+                                <select id="fontFamily" onchange="updateConfig('fontFamily', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-white focus:border-blue-500 outline-none">
+                                    <option value="Inter, sans-serif">Clean Sans (Inter)</option>
+                                    <option value="Lora, serif">Classic Serif (Lora)</option>
+                                    <option value="'Fira Code', monospace">Math Mono (Fira Code)</option>
+                                    <option value="Caveat, cursive">Handwritten (Caveat)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Font Size</label>
+                                <input type="range" id="fontSize" min="10" max="22" value="13" oninput="updateConfig('fontSize', parseInt(this.value))" class="w-full mt-2 accent-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Line Thickness Controls -->
+                    <div class="space-y-4">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Line Thickness Settings</label>
+                        
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>Main Axis Stroke</span>
+                                <span id="val-axisWidth">2.0px</span>
+                            </div>
+                            <input type="range" min="1" max="5" step="0.5" value="2" oninput="updateConfig('axisWidth', parseFloat(this.value)); document.getElementById('val-axisWidth').innerText = this.value + 'px'" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>Major Grid Lines</span>
+                                <span id="val-gridWidth">1.0px</span>
+                            </div>
+                            <input type="range" min="0.5" max="3" step="0.5" value="1" oninput="updateConfig('gridWidth', parseFloat(this.value)); document.getElementById('val-gridWidth').innerText = this.value + 'px'" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>Minor Grid Lines</span>
+                                <span id="val-minorWidth">0.5px</span>
+                            </div>
+                            <input type="range" min="0.2" max="2" step="0.1" value="0.5" oninput="updateConfig('minorWidth', parseFloat(this.value)); document.getElementById('val-minorWidth').innerText = this.value + 'px'" class="w-full accent-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Custom Color Pickers -->
+                    <div class="space-y-3 pt-2 border-t border-slate-800">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Custom Colors</label>
+                            <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer select-none">
+                                <input type="checkbox" id="transparentBg" onchange="toggleTransparentBg(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                                Transparent BG
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800" id="colorBgWrapper">
+                                <span class="text-xs">Paper Background</span>
+                                <input type="color" id="colorBg" value="#ffffff" onchange="updateConfig('colorBg', this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
+                            </div>
+                            <div class="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <span class="text-xs">Axes & Labels</span>
+                                <input type="color" id="colorAxis" value="#0f172a" onchange="updateConfig('colorAxis', this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
+                            </div>
+                            <div class="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <span class="text-xs">Major Grid</span>
+                                <input type="color" id="colorGrid" value="#cbd5e1" onchange="updateConfig('colorGrid', this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
+                            </div>
+                            <div class="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <span class="text-xs">Minor Grid</span>
+                                <input type="color" id="colorMinor" value="#e2e8f0" onchange="updateConfig('colorMinor', this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: PLOTS & OBJECTS -->
+                <div id="content-plots" class="hidden space-y-5">
+                    <!-- Interactive Plotting Banner -->
+                    <div class="p-3 bg-blue-950/40 border border-blue-800/50 rounded-xl space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-blue-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-hand-pointer"></i> Click-to-Plot Enabled
+                            </span>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-mono">Active</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Click anywhere directly on the main preview grid to drop coordinate points instantly!</p>
+                    </div>
+
+                    <!-- Add Plot Element Form -->
+                    <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Add Graph Object</label>
+                        
+                        <div class="grid grid-cols-3 gap-2">
+                            <select id="plotTypeSelect" onchange="switchPlotInputs(this.value)" class="col-span-2 bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white focus:border-blue-500 outline-none">
+                                <option value="point">Point (x, y)</option>
+                                <option value="line">Line Segment</option>
+                                <option value="function">Function y = f(x)</option>
+                                <option value="vector">Vector Arrow</option>
+                                <option value="polygon">Polygon / Shape</option>
+                            </select>
+
+                            <input type="color" id="plotColor" value="#2563eb" class="w-full h-8 bg-slate-950 border border-slate-800 rounded px-1 cursor-pointer">
+                        </div>
+
+                        <!-- Dynamic Inputs -->
+                        <div id="plotInputsContainer" class="space-y-2 pt-1">
+                            <!-- Point Input -->
+                            <div id="inputs-point" class="grid grid-cols-3 gap-2">
+                                <input type="number" id="ptX" placeholder="X" value="3" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                <input type="number" id="ptY" placeholder="Y" value="4" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                <input type="text" id="ptLabel" placeholder="Label" value="A(3,4)" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                            </div>
+
+                            <!-- Line Input -->
+                            <div id="inputs-line" class="hidden space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="number" id="lineX1" placeholder="X1" value="-4" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    <input type="number" id="lineY1" placeholder="Y1" value="-2" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="number" id="lineX2" placeholder="X2" value="5" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    <input type="number" id="lineY2" placeholder="Y2" value="4" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                </div>
+                            </div>
+
+                            <!-- Function Input -->
+                            <div id="inputs-function" class="hidden space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-mono text-slate-400">y =</span>
+                                    <input type="text" id="funcExpr" placeholder="e.g. 2*x - 1" value="2*x - 1" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono">
+                                </div>
+                                <p class="text-[10px] text-slate-500">Use JS expressions: e.g. 0.5*x + 2, x^2 - 4, Math.sin(x)</p>
+                            </div>
+
+                            <!-- Vector Input -->
+                            <div id="inputs-vector" class="hidden grid grid-cols-4 gap-1">
+                                <input type="number" id="vecX1" placeholder="X0" value="0" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                <input type="number" id="vecY1" placeholder="Y0" value="0" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                <input type="number" id="vecX2" placeholder="X1" value="4" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                <input type="number" id="vecY2" placeholder="Y1" value="3" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                            </div>
+
+                            <!-- Polygon Input -->
+                            <div id="inputs-polygon" class="hidden space-y-1">
+                                <input type="text" id="polyPoints" placeholder="(-3,-2),(3,-2),(0,4)" value="(-3,-2),(3,-2),(0,4)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono">
+                                <p class="text-[10px] text-slate-500">Format: (x1,y1),(x2,y2),(x3,y3)...</p>
+                            </div>
+                        </div>
+
+                        <button onclick="addPlotElement()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 shadow-md">
+                            <i class="fa-solid fa-plus"></i> Plot Object
+                        </button>
+                    </div>
+
+                    <!-- List of Plotted Elements -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Plots (<span id="plotCount">0</span>)</label>
+                            <button onclick="clearAllPlots()" class="text-[11px] text-rose-400 hover:underline">Clear All</button>
+                        </div>
+                        <div id="plotList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                            <div class="text-xs text-slate-500 italic p-3 text-center bg-slate-900/40 rounded-lg">No points or shapes plotted yet. Click the grid canvas or use the form above!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: WORKSHEET PAGE LAYOUT -->
+                <div id="content-sheet" class="hidden space-y-5">
+                    <div class="p-3 bg-indigo-950/30 border border-indigo-800/40 rounded-xl space-y-1">
+                        <span class="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-print"></i> Multi-Grid Worksheet Builder
+                        </span>
+                        <p class="text-[11px] text-slate-400">Arrange 1 to 6 identical or problem-focused grid boxes onto a single printable document.</p>
+                    </div>
+
+                    <!-- Worksheet Header Controls -->
+                    <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Document Header</label>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Student Name & Date Banner</label>
+                            <input type="text" id="wsTitle" value="Name: ____________________   Date: _________   Class: ________" oninput="updateWorksheetHeader()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Worksheet Title / Topic</label>
+                            <input type="text" id="wsSubtitle" value="Topic: Graphing Linear Equations & Coordinate Geometry" oninput="updateWorksheetHeader()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white">
+                        </div>
+                    </div>
+
+                    <!-- Grids Per Page Selector -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Page Grid Layout</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button onclick="setGridGridCount(1)" id="gridCount-1" class="p-2 bg-blue-600 text-white rounded-lg text-center text-xs transition-all font-medium">
+                                1 Grid
+                            </button>
+                            <button onclick="setGridGridCount(2)" id="gridCount-2" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">
+                                2 Grids
+                            </button>
+                            <button onclick="setGridGridCount(4)" id="gridCount-4" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">
+                                4 Grids
+                            </button>
+                            <button onclick="setGridGridCount(6)" id="gridCount-6" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">
+                                6 Grids
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Individual Question Prompts -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Problem Prompts & Headers</label>
+                        <div id="worksheetPromptsContainer" class="space-y-2">
+                            <!-- Dynamically injected -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <main class="flex-1 bg-slate-950 flex flex-col overflow-hidden relative checkerboard-bg">
+
+            <!-- Workspace Top Status Bar -->
+            <div class="h-10 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800/80 flex items-center justify-between px-4 text-xs text-slate-400 z-10 workspace-bar">
+                <div class="flex items-center space-x-3">
+                    <span id="coordDisplay" class="font-mono text-blue-400 bg-slate-950 px-2.5 py-0.5 rounded border border-slate-800 font-semibold">
+                        X: 0.00, Y: 0.00
+                    </span>
+                    <span class="text-slate-700">|</span>
+                    <span id="gridDimensionsText" class="text-slate-400">20x20 Grid</span>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="zoomPreview(1.1)" title="Zoom In" class="p-1.5 text-slate-400 hover:text-white transition-colors rounded hover:bg-slate-800">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                    </button>
+                    <button onclick="zoomPreview(0.9)" title="Zoom Out" class="p-1.5 text-slate-400 hover:text-white transition-colors rounded hover:bg-slate-800">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i>
+                    </button>
+                    <button onclick="resetZoom()" title="Fit View" class="p-1.5 text-slate-400 hover:text-white transition-colors rounded hover:bg-slate-800">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Canvas Scroll Window -->
+            <div id="previewViewport" class="flex-1 flex items-center justify-center p-6 overflow-auto relative">
+                
+                <!-- SVG Worksheet Document Paper Paperboard Wrapper -->
+                <div id="svgContainerWrapper" class="bg-white rounded-xl shadow-2xl transition-all duration-200 border border-slate-700/50 p-8 relative flex flex-col items-center min-w-[360px] max-w-[90vw]">
+                    
+                    <!-- Printable Worksheet Header Block -->
+                    <div id="worksheetHeader" class="w-full mb-6 text-slate-900 border-b-2 border-slate-900 pb-3 hidden">
+                        <div id="wsTitleText" class="text-sm font-bold tracking-tight mb-1 text-slate-900">Name: ____________________   Date: _________   Class: ________</div>
+                        <div id="wsSubtitleText" class="text-xs text-slate-600 font-semibold">Topic: Graphing Linear Equations & Coordinate Geometry</div>
+                    </div>
+
+                    <!-- SVG Grid Mount Container -->
+                    <div id="gridGridContainer" class="flex items-center justify-center gap-6 flex-wrap max-w-full">
+                        <!-- SVGs are generated dynamically here -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 hidden p-4 no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl text-slate-200">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-download text-blue-500"></i> Export & Print Options
+                </h3>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Image Export Resolution</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setExportScale(1)" id="scale-1" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all">
+                            Standard (1x)<br><span class="text-[10px] text-slate-500">Screen Quality</span>
+                        </button>
+                        <button onclick="setExportScale(2)" id="scale-2" class="p-2.5 rounded-lg border border-blue-500 bg-blue-500/10 text-xs font-medium text-center transition-all text-blue-400">
+                            HD Crisp (2x)<br><span class="text-[10px] text-blue-300">High Quality</span>
+                        </button>
+                        <button onclick="setExportScale(4)" id="scale-4" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all">
+                            Ultra HD (4x)<br><span class="text-[10px] text-slate-500">300 DPI Print</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="downloadPNG()" class="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-600/20">
+                        <i class="fa-solid fa-file-image text-lg"></i>
+                        <span>Download PNG</span>
+                    </button>
+                    <button onclick="downloadSVG()" class="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-indigo-600/20">
+                        <i class="fa-solid fa-vector-square text-lg"></i>
+                        <span>Download Vector SVG</span>
+                    </button>
+                    <button onclick="copyImageToClipboard()" class="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-600/20">
+                        <i class="fa-solid fa-copy text-lg"></i>
+                        <span>Copy Image to Clipboard</span>
+                    </button>
+                    <button onclick="printWorksheet()" class="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
+                        <i class="fa-solid fa-print text-lg"></i>
+                        <span>Print Page / PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-blue-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 text-xs no-print">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-blue-400 text-base"></i>
+        <span id="toastMsg">Action completed successfully!</span>
+    </div>
+
+    <script>
+        // Core Grid Configuration State
+        let config = {
+            xMin: -10,
+            xMax: 10,
+            xStep: 1,
+            yMin: -10,
+            yMax: 10,
+            yStep: 1,
+            subdivisions: 2,
+            gridType: 'lines', // 'lines', 'dashed', 'dots', 'none'
+            showXAxis: true,
+            showYAxis: true,
+            showXNumbers: true,
+            showYNumbers: true,
+            showArrows: true,
+            showOrigin: true,
+            showBorder: false,
+            showMinorGrid: true,
+            
+            // Visual Styles
+            transparentBg: false,
+            colorBg: '#ffffff',
+            colorAxis: '#0f172a',
+            colorGrid: '#cbd5e1',
+            colorMinor: '#f1f5f9',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: 13,
+            axisWidth: 2,
+            gridWidth: 1,
+            minorWidth: 0.5,
+            
+            // Worksheets & Layouts
+            layoutMode: 'single', // 'single' or 'worksheet'
+            gridCount: 1, // 1, 2, 4, 6
+            wsTitle: 'Name: ____________________   Date: _________   Class: ________',
+            wsSubtitle: 'Topic: Graphing Linear Equations & Coordinate Geometry',
+            prompts: [
+                '1. Plot the given points or functions on the coordinate plane:',
+                '2. Graph the linear equation y = mx + b:',
+                '3. State the coordinates of the shape vertices:',
+                '4. Graph the reflection across the y-axis:',
+                '5. Calculate the slope between the points:',
+                '6. Find the midpoint of the line segment:'
+            ]
+        };
+
+        let plots = []; // Plotted items: { id, type, color, ...params }
+        let currentZoom = 1;
+        let exportScale = 2;
+        let lockAspect = true;
+
+        const themes = {
+            classic: { colorBg: '#ffffff', colorAxis: '#0f172a', colorGrid: '#cbd5e1', colorMinor: '#f1f5f9' },
+            slate: { colorBg: '#0f172a', colorAxis: '#f8fafc', colorGrid: '#334155', colorMinor: '#1e293b' },
+            blueprint: { colorBg: '#1e3a8a', colorAxis: '#ffffff', colorGrid: '#3b82f6', colorMinor: '#2563eb' },
+            chalkboard: { colorBg: '#064e3b', colorAxis: '#ecfdf5', colorGrid: '#047857', colorMinor: '#065f46' }
+        };
+
+        function createSingleGridSVG(width = 460, height = 460, gridIndex = 0) {
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("width", width);
+            svg.setAttribute("height", height);
+            svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+            svg.style.backgroundColor = config.transparentBg ? 'transparent' : config.colorBg;
+            if (config.transparentBg) {
+                svg.classList.add('checkerboard-bg');
+            }
+            svg.style.borderRadius = "8px";
+            svg.setAttribute("data-grid-index", gridIndex);
+
+            const padding = 40;
+            const plotW = width - padding * 2;
+            const plotH = height - padding * 2;
+
+            const xRange = config.xMax - config.xMin;
+            const yRange = config.yMax - config.yMin;
+
+            // Coordinate Transformation
+            function toPx(x, y) {
+                const px = padding + ((x - config.xMin) / xRange) * plotW;
+                const py = height - padding - ((y - config.yMin) / yRange) * plotH;
+                return { x: px, y: py };
+            }
+
+            // Definitions for Arrow Marker
+            const defs = document.createElementNS(svgNS, "defs");
+            if (config.showArrows) {
+                const marker = document.createElementNS(svgNS, "marker");
+                marker.setAttribute("id", `arrow-${gridIndex}`);
+                marker.setAttribute("viewBox", "0 0 10 10");
+                marker.setAttribute("refX", "6");
+                marker.setAttribute("refY", "5");
+                marker.setAttribute("markerWidth", "6");
+                marker.setAttribute("markerHeight", "6");
+                marker.setAttribute("orient", "auto-start-reverse");
+                
+                const path = document.createElementNS(svgNS, "path");
+                path.setAttribute("d", "M 0 1 L 10 5 L 0 9 z");
+                path.setAttribute("fill", config.colorAxis);
+                marker.appendChild(path);
+                defs.appendChild(marker);
+            }
+            svg.appendChild(defs);
+
+            // 1. Minor Sub-grid
+            if (config.showMinorGrid && config.subdivisions > 1 && config.gridType !== 'none') {
+                const subX = config.xStep / config.subdivisions;
+                const subY = config.yStep / config.subdivisions;
+                
+                const gMinor = document.createElementNS(svgNS, "g");
+                gMinor.setAttribute("stroke", config.colorMinor);
+                gMinor.setAttribute("stroke-width", config.minorWidth);
+
+                for (let x = config.xMin; x <= config.xMax + 1e-5; x += subX) {
+                    const p1 = toPx(x, config.yMin);
+                    const p2 = toPx(x, config.yMax);
+                    if (config.gridType === 'dots') {
+                        for (let y = config.yMin; y <= config.yMax + 1e-5; y += subY) {
+                            const pt = toPx(x, y);
+                            const circle = document.createElementNS(svgNS, "circle");
+                            circle.setAttribute("cx", pt.x);
+                            circle.setAttribute("cy", pt.y);
+                            circle.setAttribute("r", "1");
+                            circle.setAttribute("fill", config.colorMinor);
+                            gMinor.appendChild(circle);
+                        }
+                    } else {
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+                        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                        gMinor.appendChild(line);
+                    }
+                }
+
+                if (config.gridType !== 'dots') {
+                    for (let y = config.yMin; y <= config.yMax + 1e-5; y += subY) {
+                        const p1 = toPx(config.xMin, y);
+                        const p2 = toPx(config.xMax, y);
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+                        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                        gMinor.appendChild(line);
+                    }
+                }
+                svg.appendChild(gMinor);
+            }
+
+            // 2. Major Grid Lines
+            if (config.gridType !== 'none') {
+                const gMajor = document.createElementNS(svgNS, "g");
+                gMajor.setAttribute("stroke", config.colorGrid);
+                gMajor.setAttribute("stroke-width", config.gridWidth);
+                if (config.gridType === 'dashed') {
+                    gMajor.setAttribute("stroke-dasharray", "4,4");
+                }
+
+                for (let x = config.xMin; x <= config.xMax + 1e-5; x += config.xStep) {
+                    const p1 = toPx(x, config.yMin);
+                    const p2 = toPx(x, config.yMax);
+                    if (config.gridType === 'dots') {
+                        for (let y = config.yMin; y <= config.yMax + 1e-5; y += config.yStep) {
+                            const pt = toPx(x, y);
+                            const circle = document.createElementNS(svgNS, "circle");
+                            circle.setAttribute("cx", pt.x);
+                            circle.setAttribute("cy", pt.y);
+                            circle.setAttribute("r", "2");
+                            circle.setAttribute("fill", config.colorGrid);
+                            gMajor.appendChild(circle);
+                        }
+                    } else {
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+                        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                        gMajor.appendChild(line);
+                    }
+                }
+
+                if (config.gridType !== 'dots') {
+                    for (let y = config.yMin; y <= config.yMax + 1e-5; y += config.yStep) {
+                        const p1 = toPx(config.xMin, y);
+                        const p2 = toPx(config.xMax, y);
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+                        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                        gMajor.appendChild(line);
+                    }
+                }
+                svg.appendChild(gMajor);
+            }
+
+            // 3. Main Axes
+            const gAxes = document.createElementNS(svgNS, "g");
+            gAxes.setAttribute("stroke", config.colorAxis);
+            gAxes.setAttribute("stroke-width", config.axisWidth);
+            gAxes.setAttribute("stroke-linecap", "square");
+
+            const originPx = toPx(0, 0);
+
+            // X Axis
+            if (config.showXAxis) {
+                const xAxisY = Math.min(Math.max(originPx.y, padding), height - padding);
+                const lineX = document.createElementNS(svgNS, "line");
+                lineX.setAttribute("x1", padding - 10);
+                lineX.setAttribute("y1", xAxisY);
+                lineX.setAttribute("x2", width - padding + 10);
+                lineX.setAttribute("y2", xAxisY);
+                if (config.showArrows) {
+                    lineX.setAttribute("marker-start", `url(#arrow-${gridIndex})`);
+                    lineX.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                }
+                gAxes.appendChild(lineX);
+            }
+
+            // Y Axis
+            if (config.showYAxis) {
+                const yAxisX = Math.min(Math.max(originPx.x, padding), width - padding);
+                const lineY = document.createElementNS(svgNS, "line");
+                lineY.setAttribute("x1", yAxisX);
+                lineY.setAttribute("y1", height - padding + 10);
+                lineY.setAttribute("x2", yAxisX);
+                lineY.setAttribute("y2", padding - 10);
+                if (config.showArrows) {
+                    lineY.setAttribute("marker-start", `url(#arrow-${gridIndex})`);
+                    lineY.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                }
+                gAxes.appendChild(lineY);
+            }
+            svg.appendChild(gAxes);
+
+            // 4. Tick Marks & Numbers
+            const gText = document.createElementNS(svgNS, "g");
+            gText.setAttribute("fill", config.colorAxis);
+            gText.setAttribute("font-family", config.fontFamily);
+            gText.setAttribute("font-size", config.fontSize);
+            gText.setAttribute("text-anchor", "middle");
+
+            // X Numbers & Ticks
+            if (config.showXNumbers) {
+                const xAxisY = Math.min(Math.max(originPx.y, padding), height - padding);
+                for (let x = config.xMin; x <= config.xMax + 1e-5; x += config.xStep) {
+                    if (Math.abs(x) < 1e-5 && !config.showOrigin) continue;
+                    const pt = toPx(x, 0);
+                    
+                    // Tick
+                    const tick = document.createElementNS(svgNS, "line");
+                    tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisY - 4);
+                    tick.setAttribute("x2", pt.x); tick.setAttribute("y2", xAxisY + 4);
+                    tick.setAttribute("stroke", config.colorAxis);
+                    tick.setAttribute("stroke-width", config.axisWidth);
+                    svg.appendChild(tick);
+
+                    // Text
+                    const text = document.createElementNS(svgNS, "text");
+                    text.setAttribute("x", pt.x);
+                    text.setAttribute("y", xAxisY + config.fontSize + 4);
+                    text.textContent = parseFloat(x.toFixed(2));
+                    gText.appendChild(text);
+                }
+            }
+
+            // Y Numbers & Ticks
+            if (config.showYNumbers) {
+                const yAxisX = Math.min(Math.max(originPx.x, padding), width - padding);
+                for (let y = config.yMin; y <= config.yMax + 1e-5; y += config.yStep) {
+                    if (Math.abs(y) < 1e-5) continue; // handled by origin
+                    const pt = toPx(0, y);
+                    
+                    // Tick
+                    const tick = document.createElementNS(svgNS, "line");
+                    tick.setAttribute("x1", yAxisX - 4); tick.setAttribute("y1", pt.y);
+                    tick.setAttribute("x2", yAxisX + 4); tick.setAttribute("y2", pt.y);
+                    tick.setAttribute("stroke", config.colorAxis);
+                    tick.setAttribute("stroke-width", config.axisWidth);
+                    svg.appendChild(tick);
+
+                    // Text
+                    const text = document.createElementNS(svgNS, "text");
+                    text.setAttribute("x", yAxisX - 8);
+                    text.setAttribute("y", pt.y + config.fontSize / 3);
+                    text.setAttribute("text-anchor", "end");
+                    text.textContent = parseFloat(y.toFixed(2));
+                    gText.appendChild(text);
+                }
+            }
+
+            // Origin Label
+            if (config.showOrigin && config.xMin <= 0 && config.xMax >= 0 && config.yMin <= 0 && config.yMax >= 0) {
+                const text = document.createElementNS(svgNS, "text");
+                text.setAttribute("x", originPx.x - 8);
+                text.setAttribute("y", originPx.y + config.fontSize + 2);
+                text.setAttribute("text-anchor", "end");
+                text.textContent = "0";
+                gText.appendChild(text);
+            }
+
+            // Axis Title Indicators (X / Y)
+            const labelX = document.createElementNS(svgNS, "text");
+            labelX.setAttribute("x", width - padding + 18);
+            labelX.setAttribute("y", Math.min(Math.max(originPx.y, padding), height - padding) + 4);
+            labelX.setAttribute("font-weight", "bold");
+            labelX.setAttribute("font-style", "italic");
+            labelX.textContent = "x";
+            gText.appendChild(labelX);
+
+            const labelY = document.createElementNS(svgNS, "text");
+            labelY.setAttribute("x", Math.min(Math.max(originPx.x, padding), width - padding));
+            labelY.setAttribute("y", padding - 18);
+            labelY.setAttribute("font-weight", "bold");
+            labelY.setAttribute("font-style", "italic");
+            labelY.textContent = "y";
+            gText.appendChild(labelY);
+
+            svg.appendChild(gText);
+
+            // 5. Render Objects & Plots
+            plots.forEach(plot => {
+                const gPlot = document.createElementNS(svgNS, "g");
+                
+                if (plot.type === 'point') {
+                    const pt = toPx(plot.x, plot.y);
+                    const circle = document.createElementNS(svgNS, "circle");
+                    circle.setAttribute("cx", pt.x); circle.setAttribute("cy", pt.y);
+                    circle.setAttribute("r", "5");
+                    circle.setAttribute("fill", plot.color);
+                    circle.setAttribute("stroke", config.colorBg);
+                    circle.setAttribute("stroke-width", "1.5");
+                    gPlot.appendChild(circle);
+
+                    if (plot.label) {
+                        const text = document.createElementNS(svgNS, "text");
+                        text.setAttribute("x", pt.x + 8);
+                        text.setAttribute("y", pt.y - 6);
+                        text.setAttribute("fill", plot.color);
+                        text.setAttribute("font-size", "12");
+                        text.setAttribute("font-weight", "bold");
+                        text.setAttribute("font-family", config.fontFamily);
+                        text.textContent = plot.label;
+                        gPlot.appendChild(text);
+                    }
+                } 
+                else if (plot.type === 'line') {
+                    const p1 = toPx(plot.x1, plot.y1);
+                    const p2 = toPx(plot.x2, plot.y2);
+                    const line = document.createElementNS(svgNS, "line");
+                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+                    line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                    line.setAttribute("stroke", plot.color);
+                    line.setAttribute("stroke-width", "2.5");
+                    line.setAttribute("stroke-linecap", "round");
+                    gPlot.appendChild(line);
+                } 
+                else if (plot.type === 'vector') {
+                    const p1 = toPx(plot.x1, plot.y1);
+                    const p2 = toPx(plot.x2, plot.y2);
+                    
+                    const markerId = `vec-arrow-${plot.id}`;
+                    const marker = document.createElementNS(svgNS, "marker");
+                    marker.setAttribute("id", markerId);
+                    marker.setAttribute("viewBox", "0 0 10 10");
+                    marker.setAttribute("refX", "6");
+                    marker.setAttribute("refY", "5");
+                    marker.setAttribute("markerWidth", "6");
+                    marker.setAttribute("markerHeight", "6");
+                    marker.setAttribute("orient", "auto");
+                    
+                    const path = document.createElementNS(svgNS, "path");
+                    path.setAttribute("d", "M 0 1 L 10 5 L 0 9 z");
+                    path.setAttribute("fill", plot.color);
+                    marker.appendChild(path);
+                    defs.appendChild(marker);
+
+                    const line = document.createElementNS(svgNS, "line");
+                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+                    line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                    line.setAttribute("stroke", plot.color);
+                    line.setAttribute("stroke-width", "2.5");
+                    line.setAttribute("marker-end", `url(#${markerId})`);
+                    gPlot.appendChild(line);
+                } 
+                else if (plot.type === 'polygon') {
+                    const pts = plot.points.map(p => {
+                        const px = toPx(p.x, p.y);
+                        return `${px.x},${px.y}`;
+                    }).join(" ");
+
+                    const poly = document.createElementNS(svgNS, "polygon");
+                    poly.setAttribute("points", pts);
+                    poly.setAttribute("fill", plot.color);
+                    poly.setAttribute("fill-opacity", "0.2");
+                    poly.setAttribute("stroke", plot.color);
+                    poly.setAttribute("stroke-width", "2");
+                    gPlot.appendChild(poly);
+                } 
+                else if (plot.type === 'function') {
+                    const path = document.createElementNS(svgNS, "path");
+                    let d = "";
+                    let isDrawing = false;
+                    const samples = 200;
+
+                    for (let i = 0; i <= samples; i++) {
+                        const xVal = config.xMin + (i / samples) * xRange;
+                        try {
+                            // Safe math function evaluation
+                            const yVal = evalFunction(plot.expr, xVal);
+                            if (typeof yVal === 'number' && !isNaN(yVal) && isFinite(yVal)) {
+                                const pt = toPx(xVal, yVal);
+                                if (pt.y >= padding - 20 && pt.y <= height - padding + 20) {
+                                    if (!isDrawing) {
+                                        d += `M ${pt.x} ${pt.y} `;
+                                        isDrawing = true;
+                                    } else {
+                                        d += `L ${pt.x} ${pt.y} `;
+                                    }
+                                } else {
+                                    isDrawing = false;
+                                }
+                            } else {
+                                isDrawing = false;
+                            }
+                        } catch (e) {
+                            isDrawing = false;
+                        }
+                    }
+
+                    if (d) {
+                        path.setAttribute("d", d);
+                        path.setAttribute("fill", "none");
+                        path.setAttribute("stroke", plot.color);
+                        path.setAttribute("stroke-width", "2.5");
+                        path.setAttribute("stroke-linecap", "round");
+                        gPlot.appendChild(path);
+                    }
+                }
+
+                svg.appendChild(gPlot);
+            });
+
+            // Outer Frame
+            if (config.showBorder) {
+                const rect = document.createElementNS(svgNS, "rect");
+                rect.setAttribute("x", padding); rect.setAttribute("y", padding);
+                rect.setAttribute("width", plotW); rect.setAttribute("height", plotH);
+                rect.setAttribute("fill", "none");
+                rect.setAttribute("stroke", config.colorAxis);
+                rect.setAttribute("stroke-width", config.axisWidth);
+                svg.appendChild(rect);
+            }
+
+            // Hover and Interactive Click Event
+            svg.addEventListener("mousemove", (e) => {
+                const rect = svg.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                const gridX = config.xMin + ((mouseX - padding) / plotW) * xRange;
+                const gridY = config.yMin + ((height - padding - mouseY) / plotH) * yRange;
+
+                if (gridX >= config.xMin && gridX <= config.xMax && gridY >= config.yMin && gridY <= config.yMax) {
+                    document.getElementById('coordDisplay').innerText = `X: ${gridX.toFixed(2)}, Y: ${gridY.toFixed(2)}`;
+                }
+            });
+
+            svg.addEventListener("click", (e) => {
+                const rect = svg.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                const gridX = Math.round(config.xMin + ((mouseX - padding) / plotW) * xRange);
+                const gridY = Math.round((config.yMin + ((height - padding - mouseY) / plotH) * yRange));
+
+                if (gridX >= config.xMin && gridX <= config.xMax && gridY >= config.yMin && gridY <= config.yMax) {
+                    addPointPlot(gridX, gridY);
+                }
+            });
+
+            return svg;
+        }
+
+        function toggleTransparentBg(val) {
+            config.transparentBg = val;
+            const bgWrapper = document.getElementById('colorBgWrapper');
+            if (val) {
+                bgWrapper.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                bgWrapper.classList.remove('opacity-40', 'pointer-events-none');
+            }
+            render();
+            showToast(val ? 'Transparent background enabled' : 'Solid background restored');
+        }
+
+        function evalFunction(expr, x) {
+            // Replace common math expressions safely
+            let formatted = expr.replace(/x/g, `(${x})`)
+                                .replace(/\^/g, '**')
+                                .replace(/sin/g, 'Math.sin')
+                                .replace(/cos/g, 'Math.cos')
+                                .replace(/tan/g, 'Math.sin')
+                                .replace(/abs/g, 'Math.abs')
+                                .replace(/sqrt/g, 'Math.sqrt');
+            return Function(`"use strict"; return (${formatted})`)();
+        }
+
+        function addPointPlot(x, y) {
+            const labels = ['A', 'B', 'C', 'D', 'P', 'Q', 'R', 'S'];
+            const labelStr = `${labels[plots.length % labels.length]}(${x},${y})`;
+            plots.push({
+                id: Date.now(),
+                type: 'point',
+                x: x,
+                y: y,
+                label: labelStr,
+                color: document.getElementById('plotColor').value || '#2563eb'
+            });
+            render();
+            showToast(`Plotted point (${x}, ${y})`);
+        }
+
+        function render() {
+            const container = document.getElementById('gridGridContainer');
+            container.innerHTML = '';
+
+            const header = document.getElementById('worksheetHeader');
+            if (config.layoutMode === 'worksheet') {
+                header.classList.remove('hidden');
+            } else {
+                header.classList.add('hidden');
+            }
+
+            const count = config.layoutMode === 'worksheet' ? config.gridCount : 1;
+            
+            let gridWidth = 460;
+            let gridHeight = 460;
+
+            if (count === 2) { gridWidth = 400; gridHeight = 400; }
+            else if (count === 4) { gridWidth = 320; gridHeight = 320; }
+            else if (count === 6) { gridWidth = 260; gridHeight = 260; }
+
+            for (let i = 0; i < count; i++) {
+                const itemBox = document.createElement('div');
+                itemBox.className = "flex flex-col items-center gap-2 grid-svg-item";
+
+                if (config.layoutMode === 'worksheet') {
+                    const promptText = document.createElement('div');
+                    promptText.className = "text-xs font-semibold text-slate-800 self-start max-w-full";
+                    promptText.innerText = config.prompts[i] || `${i + 1}. Problem Grid:`;
+                    itemBox.appendChild(promptText);
+                }
+
+                const svg = createSingleGridSVG(gridWidth, gridHeight, i);
+                itemBox.appendChild(svg);
+                container.appendChild(itemBox);
+            }
+
+            // Update UI elements
+            document.getElementById('gridDimensionsText').innerText = `${config.xMax - config.xMin}x${config.yMax - config.yMin} Axis Range`;
+            renderPlotList();
+            updateWorksheetPromptInputs();
+        }
+
+        function updateConfig(key, val) {
+            config[key] = val;
+            render();
+        }
+
+        function updateGridFromInput() {
+            config.xMin = parseFloat(document.getElementById('xMin').value) || -10;
+            config.xMax = parseFloat(document.getElementById('xMax').value) || 10;
+            config.xStep = parseFloat(document.getElementById('xStep').value) || 1;
+
+            if (lockAspect) {
+                config.yMin = config.xMin;
+                config.yMax = config.xMax;
+                config.yStep = config.xStep;
+                document.getElementById('yMin').value = config.yMin;
+                document.getElementById('yMax').value = config.yMax;
+                document.getElementById('yStep').value = config.yStep;
+            } else {
+                config.yMin = parseFloat(document.getElementById('yMin').value) || -10;
+                config.yMax = parseFloat(document.getElementById('yMax').value) || 10;
+                config.yStep = parseFloat(document.getElementById('yStep').value) || 1;
+            }
+
+            render();
+        }
+
+        function toggleLockAspect(val) {
+            lockAspect = val;
+            if (lockAspect) updateGridFromInput();
+        }
+
+        function applyPreset(presetKey) {
+            if (presetKey === 'standard') {
+                config.xMin = -10; config.xMax = 10; config.xStep = 1;
+                config.yMin = -10; config.yMax = 10; config.yStep = 1;
+                config.subdivisions = 2; config.gridType = 'lines';
+            } else if (presetKey === 'q1') {
+                config.xMin = 0; config.xMax = 12; config.xStep = 1;
+                config.yMin = 0; config.yMax = 12; config.yStep = 1;
+                config.subdivisions = 1; config.gridType = 'lines';
+            } else if (presetKey === 'dense') {
+                config.xMin = -20; config.xMax = 20; config.xStep = 2;
+                config.yMin = -20; config.yMax = 20; config.yStep = 2;
+                config.subdivisions = 2; config.gridType = 'lines';
+            } else if (presetKey === 'dot') {
+                config.xMin = -8; config.xMax = 8; config.xStep = 1;
+                config.yMin = -8; config.yMax = 8; config.yStep = 1;
+                config.gridType = 'dots';
+            }
+
+            document.getElementById('xMin').value = config.xMin;
+            document.getElementById('xMax').value = config.xMax;
+            document.getElementById('xStep').value = config.xStep;
+            document.getElementById('yMin').value = config.yMin;
+            document.getElementById('yMax').value = config.yMax;
+            document.getElementById('yStep').value = config.yStep;
+            document.getElementById('subdivisions').value = config.subdivisions;
+            document.getElementById('gridType').value = config.gridType;
+
+            render();
+            showToast(`Preset loaded: ${presetKey.toUpperCase()}`);
+        }
+
+        function setTheme(themeKey) {
+            const t = themes[themeKey];
+            if (t) {
+                config.colorBg = t.colorBg;
+                config.colorAxis = t.colorAxis;
+                config.colorGrid = t.colorGrid;
+                config.colorMinor = t.colorMinor;
+                
+                document.getElementById('colorBg').value = t.colorBg;
+                document.getElementById('colorAxis').value = t.colorAxis;
+                document.getElementById('colorGrid').value = t.colorGrid;
+                document.getElementById('colorMinor').value = t.colorMinor;
+                
+                render();
+                showToast(`Applied ${themeKey.toUpperCase()} theme`);
+            }
+        }
+
+        function switchPlotInputs(type) {
+            ['point', 'line', 'function', 'vector', 'polygon'].forEach(t => {
+                const el = document.getElementById(`inputs-${t}`);
+                if (t === type) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+        }
+
+        function addPlotElement() {
+            const type = document.getElementById('plotTypeSelect').value;
+            const color = document.getElementById('plotColor').value;
+            const id = Date.now();
+
+            if (type === 'point') {
+                const x = parseFloat(document.getElementById('ptX').value) || 0;
+                const y = parseFloat(document.getElementById('ptY').value) || 0;
+                const label = document.getElementById('ptLabel').value;
+                plots.push({ id, type, x, y, label, color });
+            } else if (type === 'line') {
+                const x1 = parseFloat(document.getElementById('lineX1').value) || 0;
+                const y1 = parseFloat(document.getElementById('lineY1').value) || 0;
+                const x2 = parseFloat(document.getElementById('lineX2').value) || 0;
+                const y2 = parseFloat(document.getElementById('lineY2').value) || 0;
+                plots.push({ id, type, x1, y1, x2, y2, color });
+            } else if (type === 'vector') {
+                const x1 = parseFloat(document.getElementById('vecX1').value) || 0;
+                const y1 = parseFloat(document.getElementById('vecY1').value) || 0;
+                const x2 = parseFloat(document.getElementById('vecX2').value) || 0;
+                const y2 = parseFloat(document.getElementById('vecY2').value) || 0;
+                plots.push({ id, type, x1, y1, x2, y2, color });
+            } else if (type === 'function') {
+                const expr = document.getElementById('funcExpr').value;
+                plots.push({ id, type, expr, color });
+            } else if (type === 'polygon') {
+                const raw = document.getElementById('polyPoints').value;
+                const matches = [...raw.matchAll(/\((-?\d+\.?\d*),(-?\d+\.?\d*)\)/g)];
+                const pts = matches.map(m => ({ x: parseFloat(m[1]), y: parseFloat(m[2]) }));
+                if (pts.length >= 3) {
+                    plots.push({ id, type, points: pts, color });
+                } else {
+                    showToast('Please enter at least 3 valid points for polygon');
+                    return;
+                }
+            }
+
+            render();
+            showToast('Plot object added');
+        }
+
+        function removePlot(id) {
+            plots = plots.filter(p => p.id !== id);
+            render();
+        }
+
+        function clearAllPlots() {
+            plots = [];
+            render();
+            showToast('Cleared all plot objects');
+        }
+
+        function renderPlotList() {
+            const list = document.getElementById('plotList');
+            document.getElementById('plotCount').innerText = plots.length;
+
+            if (plots.length === 0) {
+                list.innerHTML = `<div class="text-xs text-slate-500 italic p-3 text-center bg-slate-900/40 rounded-lg">No points or shapes plotted yet. Click the grid canvas or use the form above!</div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            plots.forEach(p => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs";
+                
+                let desc = '';
+                if (p.type === 'point') desc = `Point ${p.label || ''} (${p.x}, ${p.y})`;
+                else if (p.type === 'line') desc = `Line (${p.x1},${p.y1}) to (${p.x2},${p.y2})`;
+                else if (p.type === 'vector') desc = `Vector (${p.x1},${p.y1}) → (${p.x2},${p.y2})`;
+                else if (p.type === 'function') desc = `y = ${p.expr}`;
+                else if (p.type === 'polygon') desc = `Polygon (${p.points.length} vertices)`;
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${p.color}"></span>
+                        <span class="truncate text-slate-200 font-mono">${desc}</span>
+                    </div>
+                    <button onclick="removePlot(${p.id})" class="text-slate-500 hover:text-rose-400 p-1">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function setLayoutMode(mode) {
+            config.layoutMode = mode;
+            const singleBtn = document.getElementById('modeSingleBtn');
+            const sheetBtn = document.getElementById('modeWorksheetBtn');
+
+            if (mode === 'single') {
+                singleBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all bg-blue-600 text-white shadow-sm flex items-center gap-1.5";
+                sheetBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5";
+            } else {
+                sheetBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all bg-blue-600 text-white shadow-sm flex items-center gap-1.5";
+                singleBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5";
+                switchTab('sheet');
+            }
+
+            render();
+        }
+
+        function setGridGridCount(num) {
+            config.gridCount = num;
+            [1, 2, 4, 6].forEach(n => {
+                const btn = document.getElementById(`gridCount-${n}`);
+                if (btn) {
+                    if (n === num) btn.className = "p-2 bg-blue-600 text-white rounded-lg text-center text-xs transition-all font-medium";
+                    else btn.className = "p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium";
+                }
+            });
+            render();
+        }
+
+        function updateWorksheetHeader() {
+            config.wsTitle = document.getElementById('wsTitle').value;
+            config.wsSubtitle = document.getElementById('wsSubtitle').value;
+            document.getElementById('wsTitleText').innerText = config.wsTitle;
+            document.getElementById('wsSubtitleText').innerText = config.wsSubtitle;
+        }
+
+        function updateWorksheetPromptInputs() {
+            const container = document.getElementById('worksheetPromptsContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < config.gridCount; i++) {
+                const div = document.createElement('div');
+                div.className = "space-y-1";
+                div.innerHTML = `
+                    <label class="text-[11px] text-slate-400 block">Problem ${i + 1} Prompt</label>
+                    <input type="text" value="${config.prompts[i] || `${i + 1}. Graph the following equation:`}" oninput="config.prompts[${i}] = this.value; render()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function switchTab(tabName) {
+            ['grid', 'style', 'plots', 'sheet'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                if (t === tabName) {
+                    btn.className = 'flex-1 py-3 px-2 border-b-2 border-blue-500 text-blue-400 flex items-center justify-center gap-1.5 transition-all';
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = 'flex-1 py-3 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all';
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function zoomPreview(factor) {
+            currentZoom *= factor;
+            document.getElementById('svgContainerWrapper').style.transform = `scale(${currentZoom})`;
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            document.getElementById('svgContainerWrapper').style.transform = `scale(1)`;
+        }
+
+        function resetAll() {
+            plots = [];
+            config.layoutMode = 'single';
+            applyPreset('standard');
+            setTheme('classic');
+            resetZoom();
+            showToast('Reset all grid settings');
+        }
+
+        function openExportModal() {
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        function setExportScale(scale) {
+            exportScale = scale;
+            [1, 2, 4].forEach(s => {
+                const btn = document.getElementById(`scale-${s}`);
+                if (s === scale) {
+                    btn.className = "p-2.5 rounded-lg border border-blue-500 bg-blue-500/10 text-xs font-medium text-center transition-all text-blue-400";
+                } else {
+                    btn.className = "p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all text-slate-300";
+                }
+            });
+        }
+
+        function downloadSVG() {
+            const wrapper = document.getElementById('svgContainerWrapper');
+            const svgEl = wrapper.querySelector('svg');
+            if (!svgEl) return;
+
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `coordinate-grid-${Date.now()}.svg`;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('Downloaded SVG Vector!');
+        }
+
+        function downloadPNG() {
+            const wrapper = document.getElementById('svgContainerWrapper');
+            const svgEl = wrapper.querySelector('svg');
+            if (!svgEl) return;
+
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            
+            const width = svgEl.getAttribute("width") * exportScale;
+            const height = svgEl.getAttribute("height") * exportScale;
+            canvas.width = width;
+            canvas.height = height;
+
+            const img = new Image();
+            const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(svgBlob);
+
+            img.onload = function() {
+                if (config.transparentBg) {
+                    ctx.clearRect(0, 0, width, height);
+                } else {
+                    ctx.fillStyle = config.colorBg;
+                    ctx.fillRect(0, 0, width, height);
+                }
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const pngUrl = canvas.toDataURL("image/png");
+                const link = document.createElement("a");
+                link.href = pngUrl;
+                link.download = `coordinate-grid-${exportScale}x.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+                showToast(`Downloaded PNG (${width}x${height}px)`);
+            };
+
+            img.src = url;
+        }
+
+        async function copyImageToClipboard() {
+            const wrapper = document.getElementById('svgContainerWrapper');
+            const svgEl = wrapper.querySelector('svg');
+            if (!svgEl) return;
+
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            
+            const width = svgEl.getAttribute("width") * exportScale;
+            const height = svgEl.getAttribute("height") * exportScale;
+            canvas.width = width;
+            canvas.height = height;
+
+            const img = new Image();
+            const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(svgBlob);
+
+            img.onload = async function() {
+                if (config.transparentBg) {
+                    ctx.clearRect(0, 0, width, height);
+                } else {
+                    ctx.fillStyle = config.colorBg;
+                    ctx.fillRect(0, 0, width, height);
+                }
+                ctx.drawImage(img, 0, 0, width, height);
+                URL.revokeObjectURL(url);
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        showToast('Failed to create image blob');
+                        return;
+                    }
+
+                    try {
+                        if (navigator.clipboard && window.ClipboardItem) {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            closeExportModal();
+                            showToast('PNG Image copied to clipboard!');
+                        } else {
+                            // Fallback to copying SVG markup string if ClipboardItem API is unavailable
+                            const dummy = document.createElement('textarea');
+                            document.body.appendChild(dummy);
+                            dummy.value = svgData;
+                            dummy.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(dummy);
+                            closeExportModal();
+                            showToast('Copied SVG markup code to clipboard!');
+                        }
+                    } catch (err) {
+                        console.warn("Direct image clipboard write failed, copying SVG markup fallback...", err);
+                        const dummy = document.createElement('textarea');
+                        document.body.appendChild(dummy);
+                        dummy.value = svgData;
+                        dummy.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(dummy);
+                        closeExportModal();
+                        showToast('Copied SVG markup code to clipboard!');
+                    }
+                }, 'image/png');
+            };
+
+            img.src = url;
+        }
+
+        function printWorksheet() {
+            closeExportModal();
+            window.print();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Initialize App on window load
+        window.onload = function() {
+            applyPreset('standard');
+            setTheme('classic');
+        };
+    </script>
+</body>
+</html>
