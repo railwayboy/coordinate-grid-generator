@@ -8,10 +8,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
+    <!-- Google Fonts & KaTeX Math Styles -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -22,6 +24,7 @@
                         serif: ['Lora', 'serif'],
                         mono: ['Fira Code', 'monospace'],
                         hand: ['Caveat', 'cursive'],
+                        katex: ['KaTeX_Main', 'serif']
                     }
                 }
             }
@@ -184,14 +187,14 @@
                     <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="font-semibold text-xs text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                                <i class="fa-solid fa-arrows-left-right"></i> X-Axis Limits
+                                <i class="fa-solid fa-arrows-left-right"></i> X-Axis Limits & Labels
                             </span>
                             <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
                                 <input type="checkbox" id="lockAspect" onchange="toggleLockAspect(this.checked)" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
                                 Square Aspect
                             </label>
                         </div>
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-4 gap-2">
                             <div>
                                 <label class="text-[11px] text-slate-400 block mb-1">X Min</label>
                                 <input type="number" id="xMin" value="-10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
@@ -201,8 +204,37 @@
                                 <input type="number" id="xMax" value="10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
                             </div>
                             <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Tick Step</label>
+                                <label class="text-[11px] text-slate-400 block mb-1" title="Grid Line Spacing">Grid Step</label>
                                 <input type="number" id="xStep" value="1" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-blue-400 block mb-1" title="Number frequency without changing scale">Label Step</label>
+                                <input type="number" id="xLabelStep" value="1" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-blue-900/60 rounded px-2 py-1 text-xs text-blue-200 focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Y-Axis Bounds -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrows-up-down"></i> Y-Axis Limits & Labels
+                        </span>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y Min</label>
+                                <input type="number" id="yMin" value="-10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y Max</label>
+                                <input type="number" id="yMax" value="10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1" title="Grid Line Spacing">Grid Step</label>
+                                <input type="number" id="yStep" value="1" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-indigo-400 block mb-1" title="Number frequency without changing scale">Label Step</label>
+                                <input type="number" id="yLabelStep" value="1" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-indigo-900/60 rounded px-2 py-1 text-xs text-indigo-200 focus:border-blue-500 outline-none">
                             </div>
                         </div>
                     </div>
@@ -335,7 +367,7 @@
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Typography & Labels</label>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Font Family</label>
+                                <label class="text-[11px] text-slate-400 block mb-1">General Font</label>
                                 <select id="fontFamily" onchange="updateConfig('fontFamily', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-white focus:border-blue-500 outline-none">
                                     <option value="Inter, sans-serif">Clean Sans (Inter)</option>
                                     <option value="Lora, serif">Classic Serif (Lora)</option>
@@ -344,118 +376,39 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Font Size</label>
-                                <input type="range" id="fontSize" min="10" max="22" value="13" oninput="updateConfig('fontSize', parseInt(this.value))" class="w-full mt-2 accent-blue-500">
+                                <label class="text-[11px] text-blue-400 block mb-1">Number Labels Font</label>
+                                <select id="labelFontFamily" onchange="updateConfig('labelFontFamily', this.value)" class="w-full bg-slate-900 border border-blue-900/60 rounded px-2 py-1.5 text-xs text-blue-200 focus:border-blue-500 outline-none">
+                                    <option value="'KaTeX_Main', 'Times New Roman', serif">LaTeX Math Serif</option>
+                                    <option value="Inter, sans-serif" selected>Clean Sans (Inter)</option>
+                                    <option value="Lora, serif">Classic Serif (Lora)</option>
+                                    <option value="'Fira Code', monospace">Math Mono (Fira Code)</option>
+                                    <option value="Caveat, cursive">Handwritten (Caveat)</option>
+                                </select>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Line Thickness Controls -->
-                    <div class="space-y-4">
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Line Thickness Settings</label>
-                        
                         <div>
                             <div class="flex justify-between text-xs text-slate-400 mb-1">
-                                <span>Main Axis Stroke</span>
-                                <span id="val-axisWidth">2.0px</span>
+                                <span>Font Size</span>
+                                <span id="val-fontSize">13px</span>
                             </div>
-                            <input type="range" min="1" max="5" step="0.5" value="2" oninput="updateConfig('axisWidth', parseFloat(this.value)); document.getElementById('val-axisWidth').innerText = this.value + 'px'" class="w-full accent-blue-500">
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between text-xs text-slate-400 mb-1">
-                                <span>Major Grid Lines</span>
-                                <span id="val-gridWidth">1.0px</span>
-                            </div>
-                            <input type="range" min="0.5" max="3" step="0.5" value="1" oninput="updateConfig('gridWidth', parseFloat(this.value)); document.getElementById('val-gridWidth').innerText = this.value + 'px'" class="w-full accent-blue-500">
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between text-xs text-slate-400 mb-1">
-                                <span>Minor Grid Lines</span>
-                                <span id="val-minorWidth">0.5px</span>
-                            </div>
-                            <input type="range" min="0.2" max="2" step="0.1" value="0.5" oninput="updateConfig('minorWidth', parseFloat(this.value)); document.getElementById('val-minorWidth').innerText = this.value + 'px'" class="w-full accent-blue-500">
+                            <input type="range" id="fontSize" min="10" max="22" value="13" oninput="updateConfig('fontSize', parseInt(this.value)); document.getElementById('val-fontSize').innerText = this.value + 'px'" class="w-full accent-blue-500">
                         </div>
                     </div>
 
-                    <!-- Custom Color Pickers -->
-                    <div class="space-y-3 pt-2 border-t border-slate-800">
-                        <div class="flex items-center justify-between">
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Custom Colors</label>
-                            <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer select-none">
-                                <input type="checkbox" id="transparentBg" onchange="toggleTransparentBg(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
-                                Transparent BG
-                            </label>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800" id="colorBgWrapper">
-                                <span class="text-xs">Paper Background</span>
-                                <input type="color" id="colorBg" value="#ffffff" onchange="updateConfig('colorBg', this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
-                            </div>
-                            <div class="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
-                                <span class="text-xs">Axes & Labels</span>
-                                <input type="color" id="colorAxis" value="#0f172a" onchange="updateConfig('colorAxis', this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
-                            </div>
-                            <div class="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
-                                <span class="text-xs">Major Grid</span>
-                                <input type="color" id="colorGrid" value="#cbd5e1" onchange="updateConfig('colorGrid', this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
-                            </div>
-                            <div class="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
-                                <span class="text-xs">Minor Grid</span>
-                                <input type="color" id="colorMinor" value="#e2e8f0" onchange="updateConfig('colorMinor', this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 3: PLOTS & OBJECTS -->
-                <div id="content-plots" class="hidden space-y-5">
-                    <!-- Interactive Plotting Banner -->
-                    <div class="p-3 bg-blue-950/40 border border-blue-800/50 rounded-xl space-y-1">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-blue-300 flex items-center gap-1.5">
-                                <i class="fa-solid fa-hand-pointer"></i> Click-to-Plot Enabled
-                            </span>
-                            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-mono">Active</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400">Click anywhere directly on the main preview grid to drop coordinate points instantly!</p>
-                    </div>
-
-                    <!-- Add Plot Element Form -->
-                    <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
-                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Add Graph Object</label>
-                        
-                        <div class="grid grid-cols-3 gap-2">
-                            <select id="plotTypeSelect" onchange="switchPlotInputs(this.value)" class="col-span-2 bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white focus:border-blue-500 outline-none">
-                                <option value="point">Point (x, y)</option>
-                                <option value="line">Line Segment</option>
-                                <option value="function">Function y = f(x)</option>
-                                <option value="vector">Vector Arrow</option>
-                                <option value="polygon">Polygon / Shape</option>
-                            </select>
-
-                            <input type="color" id="plotColor" value="#2563eb" class="w-full h-8 bg-slate-950 border border-slate-800 rounded px-1 cursor-pointer">
-                        </div>
-
-                        <!-- Dynamic Inputs -->
-                        <div id="plotInputsContainer" class="space-y-2 pt-1">
-                            <!-- Point Input -->
-                            <div id="inputs-point" class="grid grid-cols-3 gap-2">
-                                <input type="number" id="ptX" placeholder="X" value="3" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
-                                <input type="number" id="ptY" placeholder="Y" value="4" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
-                                <input type="text" id="ptLabel" placeholder="Label" value="A(3,4)" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
-                            </div>
-
-                            <!-- Line Input -->
-                            <div id="inputs-line" class="hidden space-y-2">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="number" id="lineX1" placeholder="X1" value="-4" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
-                                    <input type="number" id="lineY1" placeholder="Y1" value="-2" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                            <!-- Function Input with Desmos-style shortcuts -->
+                            <div id="inputs-function" class="hidden space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-mono text-blue-400 font-bold">f(x) =</span>
+                                    <input type="text" id="funcExpr" placeholder="e.g. x^2 - 4" value="x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="number" id="lineX2" placeholder="X2" value="5" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
-                                    <input type="number" id="lineY2" placeholder="Y2" value="4" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                <!-- Desmos Quick Math Formula Chips -->
+                                <div class="flex flex-wrap gap-1.5 pt-1">
+                                    <span class="text-[10px] text-slate-500 self-center mr-1">Presets:</span>
+                                    <button type="button" onclick="setFuncPreset('2*x - 1')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">2x - 1</button>
+                                    <button type="button" onclick="setFuncPreset('x^2 - 4')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">x² - 4</button>
+                                    <button type="button" onclick="setFuncPreset('sin(x)')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">sin(x)</button>
+                                    <button type="button" onclick="setFuncPreset('1/x')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">1/x</button>
+                                    <button type="button" onclick="setFuncPreset('sqrt(x)')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">√x</button>
                                 </div>
                             </div>
 
@@ -661,9 +614,11 @@
             xMin: -10,
             xMax: 10,
             xStep: 1,
+            xLabelStep: 1, // Number label frequency step
             yMin: -10,
             yMax: 10,
             yStep: 1,
+            yLabelStep: 1, // Number label frequency step
             subdivisions: 2,
             gridType: 'lines', // 'lines', 'dashed', 'dots', 'none'
             showXAxis: true,
@@ -682,6 +637,7 @@
             colorGrid: '#cbd5e1',
             colorMinor: '#f1f5f9',
             fontFamily: 'Inter, sans-serif',
+            labelFontFamily: 'Inter, sans-serif', // Separate font for axis numbers
             fontSize: 13,
             axisWidth: 2,
             gridWidth: 1,
@@ -715,7 +671,7 @@
         };
 
         function createSingleGridSVG(width = 460, height = 460, gridIndex = 0) {
-            const svgNS = "http://www.w3.org/2000/svg";
+            // ... existing SVG code ...
             const svg = document.createElementNS(svgNS, "svg");
             svg.setAttribute("width", width);
             svg.setAttribute("height", height);
@@ -876,31 +832,23 @@
                 const lineY = document.createElementNS(svgNS, "line");
                 lineY.setAttribute("x1", yAxisX);
                 lineY.setAttribute("y1", height - padding + 10);
-                lineY.setAttribute("x2", yAxisX);
-                lineY.setAttribute("y2", padding - 10);
-                if (config.showArrows) {
-                    lineY.setAttribute("marker-start", `url(#arrow-${gridIndex})`);
-                    lineY.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
-                }
-                gAxes.appendChild(lineY);
-            }
-            svg.appendChild(gAxes);
-
-            // 4. Tick Marks & Numbers
+            // 4. Tick Marks & Numbers with Custom Label Font & Independent Label Step
             const gText = document.createElementNS(svgNS, "g");
             gText.setAttribute("fill", config.colorAxis);
-            gText.setAttribute("font-family", config.fontFamily);
+            gText.setAttribute("font-family", config.labelFontFamily || config.fontFamily);
             gText.setAttribute("font-size", config.fontSize);
             gText.setAttribute("text-anchor", "middle");
 
             // X Numbers & Ticks
             if (config.showXNumbers) {
                 const xAxisY = Math.min(Math.max(originPx.y, padding), height - padding);
+                const xLblStep = Math.max(0.0001, config.xLabelStep || config.xStep);
+                
                 for (let x = config.xMin; x <= config.xMax + 1e-5; x += config.xStep) {
                     if (Math.abs(x) < 1e-5 && !config.showOrigin) continue;
                     const pt = toPx(x, 0);
                     
-                    // Tick
+                    // Major tick line at every grid step
                     const tick = document.createElementNS(svgNS, "line");
                     tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisY - 4);
                     tick.setAttribute("x2", pt.x); tick.setAttribute("y2", xAxisY + 4);
@@ -908,23 +856,28 @@
                     tick.setAttribute("stroke-width", config.axisWidth);
                     svg.appendChild(tick);
 
-                    // Text
-                    const text = document.createElementNS(svgNS, "text");
-                    text.setAttribute("x", pt.x);
-                    text.setAttribute("y", xAxisY + config.fontSize + 4);
-                    text.textContent = parseFloat(x.toFixed(2));
-                    gText.appendChild(text);
+                    // Render number text only at intervals matching xLabelStep
+                    const isLabelStep = Math.abs((x - config.xMin) % xLblStep) < 1e-5 || Math.abs(x % xLblStep) < 1e-5;
+                    if (isLabelStep && !(Math.abs(x) < 1e-5 && config.showOrigin)) {
+                        const text = document.createElementNS(svgNS, "text");
+                        text.setAttribute("x", pt.x);
+                        text.setAttribute("y", xAxisY + config.fontSize + 4);
+                        text.textContent = parseFloat(x.toFixed(2));
+                        gText.appendChild(text);
+                    }
                 }
             }
 
             // Y Numbers & Ticks
             if (config.showYNumbers) {
                 const yAxisX = Math.min(Math.max(originPx.x, padding), width - padding);
+                const yLblStep = Math.max(0.0001, config.yLabelStep || config.yStep);
+
                 for (let y = config.yMin; y <= config.yMax + 1e-5; y += config.yStep) {
                     if (Math.abs(y) < 1e-5) continue; // handled by origin
                     const pt = toPx(0, y);
                     
-                    // Tick
+                    // Major tick line at every grid step
                     const tick = document.createElementNS(svgNS, "line");
                     tick.setAttribute("x1", yAxisX - 4); tick.setAttribute("y1", pt.y);
                     tick.setAttribute("x2", yAxisX + 4); tick.setAttribute("y2", pt.y);
@@ -932,13 +885,16 @@
                     tick.setAttribute("stroke-width", config.axisWidth);
                     svg.appendChild(tick);
 
-                    // Text
-                    const text = document.createElementNS(svgNS, "text");
-                    text.setAttribute("x", yAxisX - 8);
-                    text.setAttribute("y", pt.y + config.fontSize / 3);
-                    text.setAttribute("text-anchor", "end");
-                    text.textContent = parseFloat(y.toFixed(2));
-                    gText.appendChild(text);
+                    // Render number text only at intervals matching yLabelStep
+                    const isLabelStep = Math.abs((y - config.yMin) % yLblStep) < 1e-5 || Math.abs(y % yLblStep) < 1e-5;
+                    if (isLabelStep) {
+                        const text = document.createElementNS(svgNS, "text");
+                        text.setAttribute("x", yAxisX - 8);
+                        text.setAttribute("y", pt.y + config.fontSize / 3);
+                        text.setAttribute("text-anchor", "end");
+                        text.textContent = parseFloat(y.toFixed(2));
+                        gText.appendChild(text);
+                    }
                 }
             }
 
@@ -1135,226 +1091,63 @@
             return svg;
         }
 
-        function toggleTransparentBg(val) {
-            config.transparentBg = val;
-            const bgWrapper = document.getElementById('colorBgWrapper');
-            if (val) {
-                bgWrapper.classList.add('opacity-40', 'pointer-events-none');
-            } else {
-                bgWrapper.classList.remove('opacity-40', 'pointer-events-none');
-            }
-            render();
-            showToast(val ? 'Transparent background enabled' : 'Solid background restored');
-        }
-
-        function evalFunction(expr, x) {
-            // Replace common math expressions safely
-            let formatted = expr.replace(/x/g, `(${x})`)
-                                .replace(/\^/g, '**')
-                                .replace(/sin/g, 'Math.sin')
-                                .replace(/cos/g, 'Math.cos')
-                                .replace(/tan/g, 'Math.sin')
-                                .replace(/abs/g, 'Math.abs')
-                                .replace(/sqrt/g, 'Math.sqrt');
-            return Function(`"use strict"; return (${formatted})`)();
-        }
-
-        function addPointPlot(x, y) {
-            const labels = ['A', 'B', 'C', 'D', 'P', 'Q', 'R', 'S'];
-            const labelStr = `${labels[plots.length % labels.length]}(${x},${y})`;
-            plots.push({
-                id: Date.now(),
-                type: 'point',
-                x: x,
-                y: y,
-                label: labelStr,
-                color: document.getElementById('plotColor').value || '#2563eb'
-            });
-            render();
-            showToast(`Plotted point (${x}, ${y})`);
-        }
-
-        function render() {
-            const container = document.getElementById('gridGridContainer');
-            container.innerHTML = '';
-
-            const header = document.getElementById('worksheetHeader');
-            if (config.layoutMode === 'worksheet') {
-                header.classList.remove('hidden');
-            } else {
-                header.classList.add('hidden');
-            }
-
-            const count = config.layoutMode === 'worksheet' ? config.gridCount : 1;
-            
-            let gridWidth = 460;
-            let gridHeight = 460;
-
-            if (count === 2) { gridWidth = 400; gridHeight = 400; }
-            else if (count === 4) { gridWidth = 320; gridHeight = 320; }
-            else if (count === 6) { gridWidth = 260; gridHeight = 260; }
-
-            for (let i = 0; i < count; i++) {
-                const itemBox = document.createElement('div');
-                itemBox.className = "flex flex-col items-center gap-2 grid-svg-item";
-
-                if (config.layoutMode === 'worksheet') {
-                    const promptText = document.createElement('div');
-                    promptText.className = "text-xs font-semibold text-slate-800 self-start max-w-full";
-                    promptText.innerText = config.prompts[i] || `${i + 1}. Problem Grid:`;
-                    itemBox.appendChild(promptText);
-                }
-
-                const svg = createSingleGridSVG(gridWidth, gridHeight, i);
-                itemBox.appendChild(svg);
-                container.appendChild(itemBox);
-            }
-
-            // Update UI elements
-            document.getElementById('gridDimensionsText').innerText = `${config.xMax - config.xMin}x${config.yMax - config.yMin} Axis Range`;
-            renderPlotList();
-            updateWorksheetPromptInputs();
-        }
-
-        function updateConfig(key, val) {
-            config[key] = val;
-            render();
-        }
-
         function updateGridFromInput() {
             config.xMin = parseFloat(document.getElementById('xMin').value) || -10;
             config.xMax = parseFloat(document.getElementById('xMax').value) || 10;
             config.xStep = parseFloat(document.getElementById('xStep').value) || 1;
+            config.xLabelStep = parseFloat(document.getElementById('xLabelStep').value) || config.xStep;
 
             if (lockAspect) {
                 config.yMin = config.xMin;
                 config.yMax = config.xMax;
                 config.yStep = config.xStep;
+                config.yLabelStep = config.xLabelStep;
                 document.getElementById('yMin').value = config.yMin;
                 document.getElementById('yMax').value = config.yMax;
                 document.getElementById('yStep').value = config.yStep;
+                document.getElementById('yLabelStep').value = config.yLabelStep;
             } else {
                 config.yMin = parseFloat(document.getElementById('yMin').value) || -10;
                 config.yMax = parseFloat(document.getElementById('yMax').value) || 10;
                 config.yStep = parseFloat(document.getElementById('yStep').value) || 1;
+                config.yLabelStep = parseFloat(document.getElementById('yLabelStep').value) || config.yStep;
             }
 
             render();
         }
 
-        function toggleLockAspect(val) {
-            lockAspect = val;
-            if (lockAspect) updateGridFromInput();
+        function setFuncPreset(expr) {
+            document.getElementById('funcExpr').value = expr;
         }
 
-        function applyPreset(presetKey) {
-            if (presetKey === 'standard') {
-                config.xMin = -10; config.xMax = 10; config.xStep = 1;
-                config.yMin = -10; config.yMax = 10; config.yStep = 1;
-                config.subdivisions = 2; config.gridType = 'lines';
-            } else if (presetKey === 'q1') {
-                config.xMin = 0; config.xMax = 12; config.xStep = 1;
-                config.yMin = 0; config.yMax = 12; config.yStep = 1;
-                config.subdivisions = 1; config.gridType = 'lines';
-            } else if (presetKey === 'dense') {
-                config.xMin = -20; config.xMax = 20; config.xStep = 2;
-                config.yMin = -20; config.yMax = 20; config.yStep = 2;
-                config.subdivisions = 2; config.gridType = 'lines';
-            } else if (presetKey === 'dot') {
-                config.xMin = -8; config.xMax = 8; config.xStep = 1;
-                config.yMin = -8; config.yMax = 8; config.yStep = 1;
-                config.gridType = 'dots';
+        // Convert JavaScript / plain expressions into clean LaTeX syntax
+        function formatToLaTeX(p) {
+            if (p.type === 'point') {
+                const name = p.label ? p.label.split('(')[0] || 'P' : 'P';
+                return `${name}(${p.x}, ${p.y})`;
+            } 
+            if (p.type === 'line') {
+                return `\\overline{\\text{Segment}} \\ [(${p.x1},${p.y1}) \\to (${p.x2},${p.y2})]`;
             }
-
-            document.getElementById('xMin').value = config.xMin;
-            document.getElementById('xMax').value = config.xMax;
-            document.getElementById('xStep').value = config.xStep;
-            document.getElementById('yMin').value = config.yMin;
-            document.getElementById('yMax').value = config.yMax;
-            document.getElementById('yStep').value = config.yStep;
-            document.getElementById('subdivisions').value = config.subdivisions;
-            document.getElementById('gridType').value = config.gridType;
-
-            render();
-            showToast(`Preset loaded: ${presetKey.toUpperCase()}`);
-        }
-
-        function setTheme(themeKey) {
-            const t = themes[themeKey];
-            if (t) {
-                config.colorBg = t.colorBg;
-                config.colorAxis = t.colorAxis;
-                config.colorGrid = t.colorGrid;
-                config.colorMinor = t.colorMinor;
-                
-                document.getElementById('colorBg').value = t.colorBg;
-                document.getElementById('colorAxis').value = t.colorAxis;
-                document.getElementById('colorGrid').value = t.colorGrid;
-                document.getElementById('colorMinor').value = t.colorMinor;
-                
-                render();
-                showToast(`Applied ${themeKey.toUpperCase()} theme`);
+            if (p.type === 'vector') {
+                return `\\vec{v} = \\langle ${p.x2 - p.x1}, ${p.y2 - p.y1} \\rangle`;
             }
-        }
-
-        function switchPlotInputs(type) {
-            ['point', 'line', 'function', 'vector', 'polygon'].forEach(t => {
-                const el = document.getElementById(`inputs-${t}`);
-                if (t === type) el.classList.remove('hidden');
-                else el.classList.add('hidden');
-            });
-        }
-
-        function addPlotElement() {
-            const type = document.getElementById('plotTypeSelect').value;
-            const color = document.getElementById('plotColor').value;
-            const id = Date.now();
-
-            if (type === 'point') {
-                const x = parseFloat(document.getElementById('ptX').value) || 0;
-                const y = parseFloat(document.getElementById('ptY').value) || 0;
-                const label = document.getElementById('ptLabel').value;
-                plots.push({ id, type, x, y, label, color });
-            } else if (type === 'line') {
-                const x1 = parseFloat(document.getElementById('lineX1').value) || 0;
-                const y1 = parseFloat(document.getElementById('lineY1').value) || 0;
-                const x2 = parseFloat(document.getElementById('lineX2').value) || 0;
-                const y2 = parseFloat(document.getElementById('lineY2').value) || 0;
-                plots.push({ id, type, x1, y1, x2, y2, color });
-            } else if (type === 'vector') {
-                const x1 = parseFloat(document.getElementById('vecX1').value) || 0;
-                const y1 = parseFloat(document.getElementById('vecY1').value) || 0;
-                const x2 = parseFloat(document.getElementById('vecX2').value) || 0;
-                const y2 = parseFloat(document.getElementById('vecY2').value) || 0;
-                plots.push({ id, type, x1, y1, x2, y2, color });
-            } else if (type === 'function') {
-                const expr = document.getElementById('funcExpr').value;
-                plots.push({ id, type, expr, color });
-            } else if (type === 'polygon') {
-                const raw = document.getElementById('polyPoints').value;
-                const matches = [...raw.matchAll(/\((-?\d+\.?\d*),(-?\d+\.?\d*)\)/g)];
-                const pts = matches.map(m => ({ x: parseFloat(m[1]), y: parseFloat(m[2]) }));
-                if (pts.length >= 3) {
-                    plots.push({ id, type, points: pts, color });
-                } else {
-                    showToast('Please enter at least 3 valid points for polygon');
-                    return;
-                }
+            if (p.type === 'polygon') {
+                return `\\text{Polygon } (${p.points.length} \\text{ vertices})`;
             }
-
-            render();
-            showToast('Plot object added');
-        }
-
-        function removePlot(id) {
-            plots = plots.filter(p => p.id !== id);
-            render();
-        }
-
-        function clearAllPlots() {
-            plots = [];
-            render();
-            showToast('Cleared all plot objects');
+            if (p.type === 'function') {
+                let expr = p.expr || 'x';
+                // Clean formatting into LaTeX syntax
+                let tex = expr.replace(/\*/g, '')
+                             .replace(/\^(\d+|[a-zA-Z])/g, '^{$1}')
+                             .replace(/sin\((.*?)\)/g, '\\sin($1)')
+                             .replace(/cos\((.*?)\)/g, '\\cos($1)')
+                             .replace(/tan\((.*?)\)/g, '\\tan($1)')
+                             .replace(/sqrt\((.*?)\)/g, '\\sqrt{$1}')
+                             .replace(/(\d+)\/([a-zA-Z0-9]+)/g, '\\frac{$1}{$2}');
+                return `f(x) = ${tex}`;
+            }
+            return '';
         }
 
         function renderPlotList() {
@@ -1369,21 +1162,25 @@
             list.innerHTML = '';
             plots.forEach(p => {
                 const item = document.createElement('div');
-                item.className = "flex items-center justify-between p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs";
+                item.className = "flex items-center justify-between p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-xs hover:border-slate-700 transition-all";
                 
-                let desc = '';
-                if (p.type === 'point') desc = `Point ${p.label || ''} (${p.x}, ${p.y})`;
-                else if (p.type === 'line') desc = `Line (${p.x1},${p.y1}) to (${p.x2},${p.y2})`;
-                else if (p.type === 'vector') desc = `Vector (${p.x1},${p.y1}) → (${p.x2},${p.y2})`;
-                else if (p.type === 'function') desc = `y = ${p.expr}`;
-                else if (p.type === 'polygon') desc = `Polygon (${p.points.length} vertices)`;
+                const latexStr = formatToLaTeX(p);
+                let renderedMath = latexStr;
+
+                if (window.katex) {
+                    try {
+                        renderedMath = katex.renderToString(latexStr, { throwOnError: false });
+                    } catch (err) {
+                        renderedMath = latexStr;
+                    }
+                }
 
                 item.innerHTML = `
-                    <div class="flex items-center gap-2 overflow-hidden">
-                        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${p.color}"></span>
-                        <span class="truncate text-slate-200 font-mono">${desc}</span>
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <span class="w-3 h-3 rounded-full shrink-0 shadow-sm" style="background-color: ${p.color}"></span>
+                        <div class="truncate text-slate-100 text-xs font-serif leading-none">${renderedMath}</div>
                     </div>
-                    <button onclick="removePlot(${p.id})" class="text-slate-500 hover:text-rose-400 p-1">
+                    <button onclick="removePlot(${p.id})" class="text-slate-500 hover:text-rose-400 p-1 transition-colors">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 `;
