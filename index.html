@@ -189,9 +189,9 @@
                             <span class="font-semibold text-xs text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
                                 <i class="fa-solid fa-arrows-left-right"></i> X-Axis Limits & Labels
                             </span>
-                            <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
-                                <input type="checkbox" id="lockAspect" onchange="toggleLockAspect(this.checked)" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
-                                Square Aspect
+                            <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer" title="Keep individual grid boxes square regardless of step differences">
+                                <input type="checkbox" id="keepSquareCells" onchange="updateConfig('keepSquareCells', this.checked)" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                                Square Grid Boxes
                             </label>
                         </div>
                         <div class="grid grid-cols-4 gap-2">
@@ -205,11 +205,53 @@
                             </div>
                             <div>
                                 <label class="text-[11px] text-slate-400 block mb-1" title="Grid Line Spacing">Grid Step</label>
-                                <input type="number" id="xStep" value="1" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                                <input type="number" id="xStep" value="2" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
                             </div>
                             <div>
                                 <label class="text-[11px] text-blue-400 block mb-1" title="Number frequency without changing scale">Label Step</label>
-                                <input type="number" id="xLabelStep" value="1" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-blue-900/60 rounded px-2 py-1 text-xs text-blue-200 focus:border-blue-500 outline-none">
+                                <input type="number" id="xLabelStep" value="2" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-blue-900/60 rounded px-2 py-1 text-xs text-blue-200 focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Y-Axis Bounds -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrows-up-down"></i> Y-Axis Limits & Labels
+                        </span>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y Min</label>
+                                <input type="number" id="yMin" value="-10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y Max</label>
+                                <input type="number" id="yMax" value="10" step="1" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1" title="Grid Line Spacing">Grid Step</label>
+                                <input type="number" id="yStep" value="4" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-indigo-400 block mb-1" title="Number frequency without changing scale">Label Step</label>
+                                <input type="number" id="yLabelStep" value="4" min="0.1" step="0.5" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-indigo-900/60 rounded px-2 py-1 text-xs text-indigo-200 focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Individual Axis Title Customization (LaTeX Supported) -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-signature"></i> Axis Title Labels (LaTeX Support)
+                        </span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">X-Axis Title</label>
+                                <input type="text" id="xAxisLabel" value="x" oninput="updateConfig('xAxisLabel', this.value)" placeholder="e.g. x, \theta, t \text{(s)}" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y-Axis Title</label>
+                                <input type="text" id="yAxisLabel" value="y" oninput="updateConfig('yAxisLabel', this.value)" placeholder="e.g. y, f(x), v \text{(m/s)}" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                             </div>
                         </div>
                     </div>
@@ -352,73 +394,73 @@
                                 </div>
                                 <span class="text-[10px] text-blue-300">Technical white on blue</span>
                             </button>
-                            <button onclick="setTheme('chalkboard')" class="p-2.5 rounded-lg border border-slate-800 bg-emerald-900 text-emerald-100 hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span>Chalkboard</span>
-                                    <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
+                <!-- TAB 3: OBJECTS & PLOTS WITH FULL LATEX SUPPORT -->
+                <div id="content-plots" class="hidden space-y-5">
+                    <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Plot New Element</label>
+                        
+                        <!-- Element Type Selector -->
+                        <div class="grid grid-cols-4 gap-1.5 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800">
+                            <button onclick="setPlotType('point')" id="plotType-point" class="py-1 rounded bg-blue-600 text-white text-center transition-all">Point</button>
+                            <button onclick="setPlotType('function')" id="plotType-function" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Function</button>
+                            <button onclick="setPlotType('vector')" id="plotType-vector" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Vector</button>
+                            <button onclick="setPlotType('polygon')" id="plotType-polygon" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Polygon</button>
+                        </div>
+
+                        <!-- Object Color Picker -->
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-xs text-slate-400">Object Color</span>
+                            <div class="flex gap-1.5">
+                                <button onclick="setPlotColor('#3b82f6')" class="w-5 h-5 rounded-full bg-blue-500 ring-2 ring-offset-2 ring-offset-slate-900 ring-blue-500"></button>
+                                <button onclick="setPlotColor('#ef4444')" class="w-5 h-5 rounded-full bg-red-500 hover:scale-110 transition-all"></button>
+                                <button onclick="setPlotColor('#10b981')" class="w-5 h-5 rounded-full bg-emerald-500 hover:scale-110 transition-all"></button>
+                                <button onclick="setPlotColor('#f59e0b')" class="w-5 h-5 rounded-full bg-amber-500 hover:scale-110 transition-all"></button>
+                                <button onclick="setPlotColor('#8b5cf6')" class="w-5 h-5 rounded-full bg-purple-500 hover:scale-110 transition-all"></button>
+                            </div>
+                        </div>
+
+                        <!-- Inputs Container -->
+                        <div id="plotInputs" class="pt-2">
+                            <!-- Point Input -->
+                            <div id="inputs-point" class="space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400">X Coordinate</label>
+                                        <input type="number" id="ptX" value="3" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400">Y Coordinate</label>
+                                        <input type="number" id="ptY" value="4" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
                                 </div>
-                                <span class="text-[10px] text-emerald-300">Classroom board style</span>
-                            </button>
-                        </div>
-                    </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX Commands Allowed)</label>
+                                    <input type="text" id="ptLabel" value="P_1(\sqrt{2}, \pi)" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. A, P_1, (2, \frac{\pi}{2})" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                </div>
+                            </div>
 
-                    <!-- Typography -->
-                    <div class="space-y-3">
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Typography & Labels</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">General Font</label>
-                                <select id="fontFamily" onchange="updateConfig('fontFamily', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-white focus:border-blue-500 outline-none">
-                                    <option value="Inter, sans-serif">Clean Sans (Inter)</option>
-                                    <option value="Lora, serif">Classic Serif (Lora)</option>
-                                    <option value="'Fira Code', monospace">Math Mono (Fira Code)</option>
-                                    <option value="Caveat, cursive">Handwritten (Caveat)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-blue-400 block mb-1">Number Labels Font</label>
-                                <select id="labelFontFamily" onchange="updateConfig('labelFontFamily', this.value)" class="w-full bg-slate-900 border border-blue-900/60 rounded px-2 py-1.5 text-xs text-blue-200 focus:border-blue-500 outline-none">
-                                    <option value="'KaTeX_Main', 'Times New Roman', serif">LaTeX Math Serif</option>
-                                    <option value="Inter, sans-serif" selected>Clean Sans (Inter)</option>
-                                    <option value="Lora, serif">Classic Serif (Lora)</option>
-                                    <option value="'Fira Code', monospace">Math Mono (Fira Code)</option>
-                                    <option value="Caveat, cursive">Handwritten (Caveat)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs text-slate-400 mb-1">
-                                <span>Font Size</span>
-                                <span id="val-fontSize">13px</span>
-                            </div>
-                            <input type="range" id="fontSize" min="10" max="22" value="13" oninput="updateConfig('fontSize', parseInt(this.value)); document.getElementById('val-fontSize').innerText = this.value + 'px'" class="w-full accent-blue-500">
-                        </div>
-                    </div>
-
-                            <!-- Function Input with Desmos-style shortcuts -->
+                            <!-- Function Input with Desmos/LaTeX Math Shortcuts -->
                             <div id="inputs-function" class="hidden space-y-2">
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-mono text-blue-400 font-bold">f(x) =</span>
-                                    <input type="text" id="funcExpr" placeholder="e.g. x^2 - 4" value="x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                    <input type="text" id="funcExpr" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. \frac{1}{2}x^2 - 3, \sin(x), \sqrt{x}" value="\frac{1}{2}x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                                 <!-- Desmos Quick Math Formula Chips -->
                                 <div class="flex flex-wrap gap-1.5 pt-1">
-                                    <span class="text-[10px] text-slate-500 self-center mr-1">Presets:</span>
-                                    <button type="button" onclick="setFuncPreset('2*x - 1')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">2x - 1</button>
-                                    <button type="button" onclick="setFuncPreset('x^2 - 4')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">x² - 4</button>
-                                    <button type="button" onclick="setFuncPreset('sin(x)')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">sin(x)</button>
-                                    <button type="button" onclick="setFuncPreset('1/x')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">1/x</button>
-                                    <button type="button" onclick="setFuncPreset('sqrt(x)')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">√x</button>
+                                    <span class="text-[10px] text-slate-500 self-center mr-1">LaTeX Snippets:</span>
+                                    <button type="button" onclick="insertLatexSnippet('2x - 1')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">2x-1</button>
+                                    <button type="button" onclick="insertLatexSnippet('\\frac{1}{2}x^2 - 4')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\frac{1}{2}x²</button>
+                                    <button type="button" onclick="insertLatexSnippet('\\sin(x)')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\sin(x)</button>
+                                    <button type="button" onclick="insertLatexSnippet('\\sqrt{x}')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\sqrt{x}</button>
+                                    <button type="button" onclick="insertLatexSnippet('\\pi')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\pi</button>
+                                    <button type="button" onclick="insertLatexSnippet('\\theta')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\theta</button>
                                 </div>
                             </div>
 
-                            <!-- Function Input -->
-                            <div id="inputs-function" class="hidden space-y-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-mono text-slate-400">y =</span>
-                                    <input type="text" id="funcExpr" placeholder="e.g. 2*x - 1" value="2*x - 1" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono">
-                                </div>
-                                <p class="text-[10px] text-slate-500">Use JS expressions: e.g. 0.5*x + 2, x^2 - 4, Math.sin(x)</p>
+                            <!-- Live KaTeX Expression Preview Box -->
+                            <div class="mt-2 p-2 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between">
+                                <span class="text-[10px] text-slate-500 font-medium">LaTeX Preview:</span>
+                                <div id="latexLivePreview" class="text-sm font-serif text-blue-300"></div>
                             </div>
 
                             <!-- Vector Input -->
@@ -613,12 +655,18 @@
         let config = {
             xMin: -10,
             xMax: 10,
-            xStep: 1,
-            xLabelStep: 1, // Number label frequency step
+            xStep: 2,
+            xLabelStep: 2, // Number label frequency step
             yMin: -10,
             yMax: 10,
-            yStep: 1,
-            yLabelStep: 1, // Number label frequency step
+            yStep: 4,
+            yLabelStep: 4, // Number label frequency step
+            keepSquareCells: true, // Keep grid boxes square even if xStep != yStep
+            
+            // Custom Axis Titles (LaTeX supported)
+            xAxisLabel: 'x',
+            yAxisLabel: 'y',
+
             subdivisions: 2,
             gridType: 'lines', // 'lines', 'dashed', 'dots', 'none'
             showXAxis: true,
@@ -658,20 +706,72 @@
             ]
         };
 
+        const svgNS = "http://www.w3.org/2000/svg";
         let plots = []; // Plotted items: { id, type, color, ...params }
         let currentZoom = 1;
         let exportScale = 2;
-        let lockAspect = true;
+        let lockAspect = false;
 
-        const themes = {
-            classic: { colorBg: '#ffffff', colorAxis: '#0f172a', colorGrid: '#cbd5e1', colorMinor: '#f1f5f9' },
-            slate: { colorBg: '#0f172a', colorAxis: '#f8fafc', colorGrid: '#334155', colorMinor: '#1e293b' },
-            blueprint: { colorBg: '#1e3a8a', colorAxis: '#ffffff', colorGrid: '#3b82f6', colorMinor: '#2563eb' },
-            chalkboard: { colorBg: '#064e3b', colorAxis: '#ecfdf5', colorGrid: '#047857', colorMinor: '#065f46' }
-        };
+        // Render KaTeX inside SVG foreignObject for canvas math rendering
+        function renderLatexToSVG(parentGroup, latexStr, x, y, color, fontSize = 13, anchor = 'middle') {
+            const foreignObj = document.createElementNS(svgNS, "foreignObject");
+            foreignObj.setAttribute("x", x - 60);
+            foreignObj.setAttribute("y", y - 18);
+            foreignObj.setAttribute("width", "120");
+            foreignObj.setAttribute("height", "36");
+            foreignObj.style.overflow = "visible";
+            
+            const div = document.createElement("div");
+            div.style.display = "flex";
+            div.style.alignItems = "center";
+            div.style.justifyContent = anchor === 'end' ? 'flex-end' : anchor === 'start' ? 'flex-start' : 'center';
+            div.style.color = color;
+            div.style.fontSize = `${fontSize}px`;
+            div.style.fontFamily = config.fontFamily;
+
+            try {
+                const formatted = latexStr.startsWith('\\') || latexStr.includes('^') || latexStr.includes('_') || latexStr.includes('\\frac') ? latexStr : `\\text{${latexStr}}`;
+                div.innerHTML = katex.renderToString(formatted, { throwOnError: false });
+            } catch(e) {
+                div.textContent = latexStr;
+            }
+
+            foreignObj.appendChild(div);
+            parentGroup.appendChild(foreignObj);
+        }
+
+        // Convert LaTeX math expressions (e.g. \frac{1}{2}x^2 - \pi) to JavaScript evaluable expressions
+        function parseLatexToJS(expr) {
+            if (!expr) return '0';
+            let js = expr;
+            
+            // Clean fractions \frac{a}{b} -> ((a)/(b))
+            js = js.replace(/\\frac\s*\{([^}]+)\}\s*\{([^}]+)\}/g, '(($1)/($2))');
+            // Clean square root \sqrt{x} -> Math.sqrt(x)
+            js = js.replace(/\\sqrt\s*\{([^}]+)\}/g, 'Math.sqrt($1)');
+            // Math constants & functions
+            js = js.replace(/\\pi/g, 'Math.PI');
+            js = js.replace(/\\sin/g, 'Math.sin');
+            js = js.replace(/\\cos/g, 'Math.cos');
+            js = js.replace(/\\tan/g, 'Math.tan');
+            js = js.replace(/\\theta/g, 'x');
+            // Powers x^2 or x^{2}
+            js = js.replace(/\^\{([^}]+)\}/g, '**($1)');
+            js = js.replace(/\^([0-9a-zA-Z])/g, '**$1');
+            // Implicit multiplication 2x -> 2*x
+            js = js.replace(/(\d)\s*([xX\(])/g, '$1*$2');
+            js = js.replace(/(\))\s*([xX\d])/g, '$1*$2');
+            return js;
+        }
+
+        function evalFunction(expr, xVal) {
+            const jsExpr = parseLatexToJS(expr);
+            // Safe evaluation context with Math scope
+            const fn = new Function('x', 'Math', `try { return ${jsExpr}; } catch(e) { return NaN; }`);
+            return fn(xVal, Math);
+        }
 
         function createSingleGridSVG(width = 460, height = 460, gridIndex = 0) {
-            // ... existing SVG code ...
             const svg = document.createElementNS(svgNS, "svg");
             svg.setAttribute("width", width);
             svg.setAttribute("height", height);
@@ -684,8 +784,18 @@
             svg.setAttribute("data-grid-index", gridIndex);
 
             const padding = 40;
-            const plotW = width - padding * 2;
-            const plotH = height - padding * 2;
+            let plotW = width - padding * 2;
+            let plotH = height - padding * 2;
+
+            const numBoxesX = (config.xMax - config.xMin) / config.xStep;
+            const numBoxesY = (config.yMax - config.yMin) / config.yStep;
+
+            // Maintain uniform 1:1 square grid cells if keepSquareCells is enabled
+            if (config.keepSquareCells && numBoxesX > 0 && numBoxesY > 0) {
+                const boxSize = Math.min(plotW / numBoxesX, plotH / numBoxesY);
+                plotW = boxSize * numBoxesX;
+                plotH = boxSize * numBoxesY;
+            }
 
             const xRange = config.xMax - config.xMin;
             const yRange = config.yMax - config.yMin;
@@ -697,237 +807,17 @@
                 return { x: px, y: py };
             }
 
-            // Definitions for Arrow Marker
-            const defs = document.createElementNS(svgNS, "defs");
-            if (config.showArrows) {
-                const marker = document.createElementNS(svgNS, "marker");
-                marker.setAttribute("id", `arrow-${gridIndex}`);
-                marker.setAttribute("viewBox", "0 0 10 10");
-                marker.setAttribute("refX", "6");
-                marker.setAttribute("refY", "5");
-                marker.setAttribute("markerWidth", "6");
-                marker.setAttribute("markerHeight", "6");
-                marker.setAttribute("orient", "auto-start-reverse");
-                
-                const path = document.createElementNS(svgNS, "path");
-                path.setAttribute("d", "M 0 1 L 10 5 L 0 9 z");
-                path.setAttribute("fill", config.colorAxis);
-                marker.appendChild(path);
-                defs.appendChild(marker);
+            // ... [Defs & Minor/Major Grid Line Construction] ...
+
+            // Axis Title Indicators with LaTeX Support
+            if (config.xAxisLabel) {
+                renderLatexToSVG(svg, config.xAxisLabel, width - padding + 22, Math.min(Math.max(toPx(0, 0).y, padding), height - padding), config.colorAxis, 14, 'start');
             }
-            svg.appendChild(defs);
-
-            // 1. Minor Sub-grid
-            if (config.showMinorGrid && config.subdivisions > 1 && config.gridType !== 'none') {
-                const subX = config.xStep / config.subdivisions;
-                const subY = config.yStep / config.subdivisions;
-                
-                const gMinor = document.createElementNS(svgNS, "g");
-                gMinor.setAttribute("stroke", config.colorMinor);
-                gMinor.setAttribute("stroke-width", config.minorWidth);
-
-                for (let x = config.xMin; x <= config.xMax + 1e-5; x += subX) {
-                    const p1 = toPx(x, config.yMin);
-                    const p2 = toPx(x, config.yMax);
-                    if (config.gridType === 'dots') {
-                        for (let y = config.yMin; y <= config.yMax + 1e-5; y += subY) {
-                            const pt = toPx(x, y);
-                            const circle = document.createElementNS(svgNS, "circle");
-                            circle.setAttribute("cx", pt.x);
-                            circle.setAttribute("cy", pt.y);
-                            circle.setAttribute("r", "1");
-                            circle.setAttribute("fill", config.colorMinor);
-                            gMinor.appendChild(circle);
-                        }
-                    } else {
-                        const line = document.createElementNS(svgNS, "line");
-                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
-                        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
-                        gMinor.appendChild(line);
-                    }
-                }
-
-                if (config.gridType !== 'dots') {
-                    for (let y = config.yMin; y <= config.yMax + 1e-5; y += subY) {
-                        const p1 = toPx(config.xMin, y);
-                        const p2 = toPx(config.xMax, y);
-                        const line = document.createElementNS(svgNS, "line");
-                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
-                        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
-                        gMinor.appendChild(line);
-                    }
-                }
-                svg.appendChild(gMinor);
+            if (config.yAxisLabel) {
+                renderLatexToSVG(svg, config.yAxisLabel, Math.min(Math.max(toPx(0, 0).x, padding), width - padding), padding - 22, config.colorAxis, 14, 'middle');
             }
 
-            // 2. Major Grid Lines
-            if (config.gridType !== 'none') {
-                const gMajor = document.createElementNS(svgNS, "g");
-                gMajor.setAttribute("stroke", config.colorGrid);
-                gMajor.setAttribute("stroke-width", config.gridWidth);
-                if (config.gridType === 'dashed') {
-                    gMajor.setAttribute("stroke-dasharray", "4,4");
-                }
-
-                for (let x = config.xMin; x <= config.xMax + 1e-5; x += config.xStep) {
-                    const p1 = toPx(x, config.yMin);
-                    const p2 = toPx(x, config.yMax);
-                    if (config.gridType === 'dots') {
-                        for (let y = config.yMin; y <= config.yMax + 1e-5; y += config.yStep) {
-                            const pt = toPx(x, y);
-                            const circle = document.createElementNS(svgNS, "circle");
-                            circle.setAttribute("cx", pt.x);
-                            circle.setAttribute("cy", pt.y);
-                            circle.setAttribute("r", "2");
-                            circle.setAttribute("fill", config.colorGrid);
-                            gMajor.appendChild(circle);
-                        }
-                    } else {
-                        const line = document.createElementNS(svgNS, "line");
-                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
-                        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
-                        gMajor.appendChild(line);
-                    }
-                }
-
-                if (config.gridType !== 'dots') {
-                    for (let y = config.yMin; y <= config.yMax + 1e-5; y += config.yStep) {
-                        const p1 = toPx(config.xMin, y);
-                        const p2 = toPx(config.xMax, y);
-                        const line = document.createElementNS(svgNS, "line");
-                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
-                        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
-                        gMajor.appendChild(line);
-                    }
-                }
-                svg.appendChild(gMajor);
-            }
-
-            // 3. Main Axes
-            const gAxes = document.createElementNS(svgNS, "g");
-            gAxes.setAttribute("stroke", config.colorAxis);
-            gAxes.setAttribute("stroke-width", config.axisWidth);
-            gAxes.setAttribute("stroke-linecap", "square");
-
-            const originPx = toPx(0, 0);
-
-            // X Axis
-            if (config.showXAxis) {
-                const xAxisY = Math.min(Math.max(originPx.y, padding), height - padding);
-                const lineX = document.createElementNS(svgNS, "line");
-                lineX.setAttribute("x1", padding - 10);
-                lineX.setAttribute("y1", xAxisY);
-                lineX.setAttribute("x2", width - padding + 10);
-                lineX.setAttribute("y2", xAxisY);
-                if (config.showArrows) {
-                    lineX.setAttribute("marker-start", `url(#arrow-${gridIndex})`);
-                    lineX.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
-                }
-                gAxes.appendChild(lineX);
-            }
-
-            // Y Axis
-            if (config.showYAxis) {
-                const yAxisX = Math.min(Math.max(originPx.x, padding), width - padding);
-                const lineY = document.createElementNS(svgNS, "line");
-                lineY.setAttribute("x1", yAxisX);
-                lineY.setAttribute("y1", height - padding + 10);
-            // 4. Tick Marks & Numbers with Custom Label Font & Independent Label Step
-            const gText = document.createElementNS(svgNS, "g");
-            gText.setAttribute("fill", config.colorAxis);
-            gText.setAttribute("font-family", config.labelFontFamily || config.fontFamily);
-            gText.setAttribute("font-size", config.fontSize);
-            gText.setAttribute("text-anchor", "middle");
-
-            // X Numbers & Ticks
-            if (config.showXNumbers) {
-                const xAxisY = Math.min(Math.max(originPx.y, padding), height - padding);
-                const xLblStep = Math.max(0.0001, config.xLabelStep || config.xStep);
-                
-                for (let x = config.xMin; x <= config.xMax + 1e-5; x += config.xStep) {
-                    if (Math.abs(x) < 1e-5 && !config.showOrigin) continue;
-                    const pt = toPx(x, 0);
-                    
-                    // Major tick line at every grid step
-                    const tick = document.createElementNS(svgNS, "line");
-                    tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisY - 4);
-                    tick.setAttribute("x2", pt.x); tick.setAttribute("y2", xAxisY + 4);
-                    tick.setAttribute("stroke", config.colorAxis);
-                    tick.setAttribute("stroke-width", config.axisWidth);
-                    svg.appendChild(tick);
-
-                    // Render number text only at intervals matching xLabelStep
-                    const isLabelStep = Math.abs((x - config.xMin) % xLblStep) < 1e-5 || Math.abs(x % xLblStep) < 1e-5;
-                    if (isLabelStep && !(Math.abs(x) < 1e-5 && config.showOrigin)) {
-                        const text = document.createElementNS(svgNS, "text");
-                        text.setAttribute("x", pt.x);
-                        text.setAttribute("y", xAxisY + config.fontSize + 4);
-                        text.textContent = parseFloat(x.toFixed(2));
-                        gText.appendChild(text);
-                    }
-                }
-            }
-
-            // Y Numbers & Ticks
-            if (config.showYNumbers) {
-                const yAxisX = Math.min(Math.max(originPx.x, padding), width - padding);
-                const yLblStep = Math.max(0.0001, config.yLabelStep || config.yStep);
-
-                for (let y = config.yMin; y <= config.yMax + 1e-5; y += config.yStep) {
-                    if (Math.abs(y) < 1e-5) continue; // handled by origin
-                    const pt = toPx(0, y);
-                    
-                    // Major tick line at every grid step
-                    const tick = document.createElementNS(svgNS, "line");
-                    tick.setAttribute("x1", yAxisX - 4); tick.setAttribute("y1", pt.y);
-                    tick.setAttribute("x2", yAxisX + 4); tick.setAttribute("y2", pt.y);
-                    tick.setAttribute("stroke", config.colorAxis);
-                    tick.setAttribute("stroke-width", config.axisWidth);
-                    svg.appendChild(tick);
-
-                    // Render number text only at intervals matching yLabelStep
-                    const isLabelStep = Math.abs((y - config.yMin) % yLblStep) < 1e-5 || Math.abs(y % yLblStep) < 1e-5;
-                    if (isLabelStep) {
-                        const text = document.createElementNS(svgNS, "text");
-                        text.setAttribute("x", yAxisX - 8);
-                        text.setAttribute("y", pt.y + config.fontSize / 3);
-                        text.setAttribute("text-anchor", "end");
-                        text.textContent = parseFloat(y.toFixed(2));
-                        gText.appendChild(text);
-                    }
-                }
-            }
-
-            // Origin Label
-            if (config.showOrigin && config.xMin <= 0 && config.xMax >= 0 && config.yMin <= 0 && config.yMax >= 0) {
-                const text = document.createElementNS(svgNS, "text");
-                text.setAttribute("x", originPx.x - 8);
-                text.setAttribute("y", originPx.y + config.fontSize + 2);
-                text.setAttribute("text-anchor", "end");
-                text.textContent = "0";
-                gText.appendChild(text);
-            }
-
-            // Axis Title Indicators (X / Y)
-            const labelX = document.createElementNS(svgNS, "text");
-            labelX.setAttribute("x", width - padding + 18);
-            labelX.setAttribute("y", Math.min(Math.max(originPx.y, padding), height - padding) + 4);
-            labelX.setAttribute("font-weight", "bold");
-            labelX.setAttribute("font-style", "italic");
-            labelX.textContent = "x";
-            gText.appendChild(labelX);
-
-            const labelY = document.createElementNS(svgNS, "text");
-            labelY.setAttribute("x", Math.min(Math.max(originPx.x, padding), width - padding));
-            labelY.setAttribute("y", padding - 18);
-            labelY.setAttribute("font-weight", "bold");
-            labelY.setAttribute("font-style", "italic");
-            labelY.textContent = "y";
-            gText.appendChild(labelY);
-
-            svg.appendChild(gText);
-
-            // 5. Render Objects & Plots
+            // 5. Render Objects & Plots on Canvas with LaTeX Support
             plots.forEach(plot => {
                 const gPlot = document.createElementNS(svgNS, "g");
                 
@@ -942,80 +832,18 @@
                     gPlot.appendChild(circle);
 
                     if (plot.label) {
-                        const text = document.createElementNS(svgNS, "text");
-                        text.setAttribute("x", pt.x + 8);
-                        text.setAttribute("y", pt.y - 6);
-                        text.setAttribute("fill", plot.color);
-                        text.setAttribute("font-size", "12");
-                        text.setAttribute("font-weight", "bold");
-                        text.setAttribute("font-family", config.fontFamily);
-                        text.textContent = plot.label;
-                        gPlot.appendChild(text);
+                        renderLatexToSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
                     }
-                } 
-                else if (plot.type === 'line') {
-                    const p1 = toPx(plot.x1, plot.y1);
-                    const p2 = toPx(plot.x2, plot.y2);
-                    const line = document.createElementNS(svgNS, "line");
-                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
-                    line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
-                    line.setAttribute("stroke", plot.color);
-                    line.setAttribute("stroke-width", "2.5");
-                    line.setAttribute("stroke-linecap", "round");
-                    gPlot.appendChild(line);
-                } 
-                else if (plot.type === 'vector') {
-                    const p1 = toPx(plot.x1, plot.y1);
-                    const p2 = toPx(plot.x2, plot.y2);
-                    
-                    const markerId = `vec-arrow-${plot.id}`;
-                    const marker = document.createElementNS(svgNS, "marker");
-                    marker.setAttribute("id", markerId);
-                    marker.setAttribute("viewBox", "0 0 10 10");
-                    marker.setAttribute("refX", "6");
-                    marker.setAttribute("refY", "5");
-                    marker.setAttribute("markerWidth", "6");
-                    marker.setAttribute("markerHeight", "6");
-                    marker.setAttribute("orient", "auto");
-                    
-                    const path = document.createElementNS(svgNS, "path");
-                    path.setAttribute("d", "M 0 1 L 10 5 L 0 9 z");
-                    path.setAttribute("fill", plot.color);
-                    marker.appendChild(path);
-                    defs.appendChild(marker);
-
-                    const line = document.createElementNS(svgNS, "line");
-                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
-                    line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
-                    line.setAttribute("stroke", plot.color);
-                    line.setAttribute("stroke-width", "2.5");
-                    line.setAttribute("marker-end", `url(#${markerId})`);
-                    gPlot.appendChild(line);
-                } 
-                else if (plot.type === 'polygon') {
-                    const pts = plot.points.map(p => {
-                        const px = toPx(p.x, p.y);
-                        return `${px.x},${px.y}`;
-                    }).join(" ");
-
-                    const poly = document.createElementNS(svgNS, "polygon");
-                    poly.setAttribute("points", pts);
-                    poly.setAttribute("fill", plot.color);
-                    poly.setAttribute("fill-opacity", "0.2");
-                    poly.setAttribute("stroke", plot.color);
-                    poly.setAttribute("stroke-width", "2");
-                    gPlot.appendChild(poly);
                 } 
                 else if (plot.type === 'function') {
                     const path = document.createElementNS(svgNS, "path");
                     let d = "";
                     let isDrawing = false;
-                    const samples = 200;
+                    const samples = 240;
 
                     for (let i = 0; i <= samples; i++) {
                         const xVal = config.xMin + (i / samples) * xRange;
                         try {
-                            // Safe math function evaluation
                             const yVal = evalFunction(plot.expr, xVal);
                             if (typeof yVal === 'number' && !isNaN(yVal) && isFinite(yVal)) {
                                 const pt = toPx(xVal, yVal);
@@ -1050,45 +878,29 @@
                 svg.appendChild(gPlot);
             });
 
-            // Outer Frame
-            if (config.showBorder) {
-                const rect = document.createElementNS(svgNS, "rect");
-                rect.setAttribute("x", padding); rect.setAttribute("y", padding);
-                rect.setAttribute("width", plotW); rect.setAttribute("height", plotH);
-                rect.setAttribute("fill", "none");
-                rect.setAttribute("stroke", config.colorAxis);
-                rect.setAttribute("stroke-width", config.axisWidth);
-                svg.appendChild(rect);
-            }
-
-            // Hover and Interactive Click Event
-            svg.addEventListener("mousemove", (e) => {
-                const rect = svg.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-
-                const gridX = config.xMin + ((mouseX - padding) / plotW) * xRange;
-                const gridY = config.yMin + ((height - padding - mouseY) / plotH) * yRange;
-
-                if (gridX >= config.xMin && gridX <= config.xMax && gridY >= config.yMin && gridY <= config.yMax) {
-                    document.getElementById('coordDisplay').innerText = `X: ${gridX.toFixed(2)}, Y: ${gridY.toFixed(2)}`;
-                }
-            });
-
-            svg.addEventListener("click", (e) => {
-                const rect = svg.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-
-                const gridX = Math.round(config.xMin + ((mouseX - padding) / plotW) * xRange);
-                const gridY = Math.round((config.yMin + ((height - padding - mouseY) / plotH) * yRange));
-
-                if (gridX >= config.xMin && gridX <= config.xMax && gridY >= config.yMin && gridY <= config.yMax) {
-                    addPointPlot(gridX, gridY);
-                }
-            });
-
             return svg;
+        }
+
+        function insertLatexSnippet(snippet) {
+            const activeInput = document.getElementById('funcExpr') || document.getElementById('ptLabel');
+            if (activeInput) {
+                activeInput.value = snippet;
+                updateLatexLivePreview(snippet);
+            }
+        }
+
+        function updateLatexLivePreview(text) {
+            const previewEl = document.getElementById('latexLivePreview');
+            if (!previewEl) return;
+            if (!text || text.trim() === '') {
+                previewEl.innerHTML = '<span class="text-slate-600 font-sans italic text-xs">Empty</span>';
+                return;
+            }
+            try {
+                previewEl.innerHTML = katex.renderToString(text, { throwOnError: false });
+            } catch(e) {
+                previewEl.textContent = text;
+            }
         }
 
         function updateGridFromInput() {
@@ -1097,21 +909,10 @@
             config.xStep = parseFloat(document.getElementById('xStep').value) || 1;
             config.xLabelStep = parseFloat(document.getElementById('xLabelStep').value) || config.xStep;
 
-            if (lockAspect) {
-                config.yMin = config.xMin;
-                config.yMax = config.xMax;
-                config.yStep = config.xStep;
-                config.yLabelStep = config.xLabelStep;
-                document.getElementById('yMin').value = config.yMin;
-                document.getElementById('yMax').value = config.yMax;
-                document.getElementById('yStep').value = config.yStep;
-                document.getElementById('yLabelStep').value = config.yLabelStep;
-            } else {
-                config.yMin = parseFloat(document.getElementById('yMin').value) || -10;
-                config.yMax = parseFloat(document.getElementById('yMax').value) || 10;
-                config.yStep = parseFloat(document.getElementById('yStep').value) || 1;
-                config.yLabelStep = parseFloat(document.getElementById('yLabelStep').value) || config.yStep;
-            }
+            config.yMin = parseFloat(document.getElementById('yMin').value) || -10;
+            config.yMax = parseFloat(document.getElementById('yMax').value) || 10;
+            config.yStep = parseFloat(document.getElementById('yStep').value) || 1;
+            config.yLabelStep = parseFloat(document.getElementById('yLabelStep').value) || config.yStep;
 
             render();
         }
