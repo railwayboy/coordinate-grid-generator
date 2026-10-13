@@ -502,12 +502,12 @@
                         <div id="plotInputs" class="pt-2">
                             <!-- Point Input -->
                             <div id="inputs-point" class="space-y-2">
-                                <div class="grid grid-cols-2 gap-2">
+                                <div class="grid grid-cols-2 gap-2" id="ptCoordsGrid">
                                     <div>
                                         <label class="text-[10px] text-slate-400 block mb-1">X Coordinate</label>
                                         <input type="number" id="ptX" value="3" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
                                     </div>
-                                    <div>
+                                    <div id="ptYGroup">
                                         <label class="text-[10px] text-slate-400 block mb-1">Y Coordinate</label>
                                         <input type="number" id="ptY" value="4" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
                                     </div>
@@ -1174,6 +1174,11 @@
             gPlottedObjects.setAttribute("clip-path", `url(#grid-clip-${gridIndex})`);
 
             plots.forEach(plot => {
+                // Strict Plane System Object Filtering
+                if (config.planeType === 'cartesian' && (plot.type === 'inequality1d' || plot.type === 'complex')) return;
+                if (config.planeType === 'complex' && (plot.type === 'inequality1d' || plot.type === 'function' || plot.type === 'inequality')) return;
+                if (config.planeType === 'numberline' && plot.type !== 'inequality1d' && plot.type !== 'point') return;
+
                 const gPlot = document.createElementNS(svgNS, "g");
                 
                 if (plot.type === 'point') {
@@ -1645,50 +1650,78 @@
             const yContainer = document.getElementById('yAxisBoundsContainer');
             const yGroup = document.getElementById('yAxisTitleGroup');
             
-            const btn1D = document.getElementById('plotType-inequality1d');
-            const btnCplx = document.getElementById('plotType-complex');
+            const btnPt = document.getElementById('plotType-point');
             const btnFunc = document.getElementById('plotType-function');
             const btnIneq = document.getElementById('plotType-inequality');
+            const btn1D = document.getElementById('plotType-inequality1d');
+            const btnCplx = document.getElementById('plotType-complex');
             const btnVec = document.getElementById('plotType-vector');
+
+            const ptYGroup = document.getElementById('ptYGroup');
 
             if (type === 'numberline') {
                 yContainer.classList.add('hidden');
                 yGroup.classList.add('hidden');
+                if (ptYGroup) ptYGroup.classList.add('hidden');
 
+                // 1D Line Mode: Show 1D Line & 1D Point. Hide 2D Cartesian & Complex
                 if (btn1D) btn1D.classList.remove('hidden');
-                if (btnCplx) btnCplx.classList.add('hidden');
+                if (btnPt) btnPt.classList.remove('hidden');
                 if (btnFunc) btnFunc.classList.add('hidden');
                 if (btnIneq) btnIneq.classList.add('hidden');
+                if (btnCplx) btnCplx.classList.add('hidden');
                 if (btnVec) btnVec.classList.add('hidden');
 
-                setPlotType('inequality1d');
+                if (selectedPlotType !== 'inequality1d' && selectedPlotType !== 'point') {
+                    setPlotType('inequality1d');
+                } else {
+                    setPlotType(selectedPlotType);
+                }
+
                 config.xAxisLabel = 'x';
+                document.getElementById('xAxisLabel').value = config.xAxisLabel;
             } else if (type === 'complex') {
                 yContainer.classList.remove('hidden');
                 yGroup.classList.remove('hidden');
+                if (ptYGroup) ptYGroup.classList.remove('hidden');
 
-                if (btn1D) btn1D.classList.add('hidden');
+                // Complex Mode: Show Complex Number, Point, Vector. Hide 1D Line & Cartesian Functions/Inequalities
                 if (btnCplx) btnCplx.classList.remove('hidden');
-                if (btnFunc) btnFunc.classList.remove('hidden');
-                if (btnIneq) btnIneq.classList.remove('hidden');
+                if (btnPt) btnPt.classList.remove('hidden');
                 if (btnVec) btnVec.classList.remove('hidden');
+                if (btn1D) btn1D.classList.add('hidden');
+                if (btnFunc) btnFunc.classList.add('hidden');
+                if (btnIneq) btnIneq.classList.add('hidden');
 
-                if (selectedPlotType === 'inequality1d') setPlotType('complex');
+                if (selectedPlotType !== 'complex' && selectedPlotType !== 'point' && selectedPlotType !== 'vector') {
+                    setPlotType('complex');
+                } else {
+                    setPlotType(selectedPlotType);
+                }
+
                 config.xAxisLabel = '\\text{Re}';
                 config.yAxisLabel = '\\text{Im}';
                 document.getElementById('xAxisLabel').value = config.xAxisLabel;
                 document.getElementById('yAxisLabel').value = config.yAxisLabel;
-            } else {
+            } else { // Cartesian (2D)
                 yContainer.classList.remove('hidden');
                 yGroup.classList.remove('hidden');
+                if (ptYGroup) ptYGroup.classList.remove('hidden');
 
-                if (btn1D) btn1D.classList.add('hidden');
-                if (btnCplx) btnCplx.classList.add('hidden');
+                // Cartesian 2D Mode: Show Point, Function, Inequality, Vector. Hide 1D Line & Complex
+                if (btnPt) btnPt.classList.remove('hidden');
                 if (btnFunc) btnFunc.classList.remove('hidden');
                 if (btnIneq) btnIneq.classList.remove('hidden');
                 if (btnVec) btnVec.classList.remove('hidden');
+                if (btn1D) btn1D.classList.add('hidden');
+                if (btnCplx) btnCplx.classList.add('hidden');
 
-                if (selectedPlotType === 'inequality1d' || selectedPlotType === 'complex') setPlotType('point');
+                if (selectedPlotType === 'inequality1d' || selectedPlotType === 'complex') {
+                    setPlotType('point');
+                } else {
+                    setPlotType(selectedPlotType);
+                }
+
                 config.xAxisLabel = 'x';
                 config.yAxisLabel = 'y';
                 document.getElementById('xAxisLabel').value = config.xAxisLabel;
@@ -1818,13 +1851,15 @@
         function addPlotElement() {
             if (selectedPlotType === 'point') {
                 const x = parseFloat(document.getElementById('ptX').value) || 0;
-                const y = parseFloat(document.getElementById('ptY').value) || 0;
+                const y = config.planeType === 'numberline' ? 0 : (parseFloat(document.getElementById('ptY').value) || 0);
                 const label = document.getElementById('ptLabel').value;
                 plots.push({ id: Date.now(), type: 'point', x, y, label, color: selectedColor });
             } else if (selectedPlotType === 'function') {
+                if (config.planeType !== 'cartesian') return;
                 const expr = document.getElementById('funcExpr').value || 'x';
                 plots.push({ id: Date.now(), type: 'function', expr, color: selectedColor });
             } else if (selectedPlotType === 'inequality') {
+                if (config.planeType !== 'cartesian') return;
                 const expr = document.getElementById('ineqExpr').value || 'x';
                 const op = document.getElementById('ineqOp').value;
                 const v = document.getElementById('ineqVar').value;
@@ -1845,6 +1880,7 @@
                 const label = document.getElementById('cplxLabel').value;
                 plots.push({ id: Date.now(), type: 'complex', re, im, showVector, showModulus, showConjugate, label, color: selectedColor });
             } else if (selectedPlotType === 'vector') {
+                if (config.planeType === 'numberline') return;
                 const x1 = parseFloat(document.getElementById('vecX1').value) || 0;
                 const y1 = parseFloat(document.getElementById('vecY1').value) || 0;
                 const x2 = parseFloat(document.getElementById('vecX2').value) || 0;
@@ -1874,25 +1910,25 @@
                 if (p.ineqType === 'gt') return `x > ${p.a}`;
                 if (p.ineqType === 'gte') return `x \\ge ${p.a}`;
                 if (p.ineqType === 'lt') return `x < ${p.a}`;
-                if (p.ineqType === 'lte') return `x \\le ${p.a}`;
-                if (p.ineqType === 'interval') return `${p.a} < x \\le ${p.b}`;
-            }
-            if (p.type === 'complex') return p.label ? p.label : `z = ${p.re} + ${p.im}i`;
-            if (p.type === 'vector') return `\\vec{v} = \\langle ${p.x2 - p.x1}, ${p.y2 - p.y1} \\rangle`;
-            return '';
+        function isPlotValidForMode(plot, mode) {
+            if (mode === 'cartesian') return plot.type === 'point' || plot.type === 'function' || plot.type === 'inequality' || plot.type === 'vector';
+            if (mode === 'complex') return plot.type === 'complex' || plot.type === 'point' || plot.type === 'vector';
+            if (mode === 'numberline') return plot.type === 'inequality1d' || plot.type === 'point';
+            return true;
         }
 
         function renderPlotList() {
             const list = document.getElementById('plotList');
-            document.getElementById('plotCount').innerText = plots.length;
+            const activeModePlots = plots.filter(p => isPlotValidForMode(p, config.planeType));
+            document.getElementById('plotCount').innerText = activeModePlots.length;
 
-            if (plots.length === 0) {
-                list.innerHTML = `<div class="text-xs text-slate-500 italic p-3 text-center bg-slate-900/40 rounded-lg">No points or shapes plotted yet. Click the grid canvas or use the form above!</div>`;
+            if (activeModePlots.length === 0) {
+                list.innerHTML = `<div class="text-xs text-slate-500 italic p-3 text-center bg-slate-900/40 rounded-lg">No points or shapes plotted for this plane mode yet. Click the grid canvas or use the form above!</div>`;
                 return;
             }
 
             list.innerHTML = '';
-            plots.forEach(p => {
+            activeModePlots.forEach(p => {
                 const item = document.createElement('div');
                 item.className = "flex items-center justify-between p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-xs hover:border-slate-700 transition-all";
                 
