@@ -277,9 +277,9 @@
                             <div>
                                 <label class="text-[11px] text-slate-400 block mb-1">Arrow Ends</label>
                                 <select id="arrowPosition" onchange="updateConfig('arrowPosition', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white focus:border-blue-500 outline-none">
-                                    <option value="both">Both Ends (← →)</option>
+                                    <option value="both" selected>Both Ends (← →)</option>
                                     <option value="positive">Positive Only (→)</option>
-                                    <option value="none" selected>No Arrows</option>
+                                    <option value="none">No Arrows</option>
                                 </select>
                             </div>
                             <div>
@@ -719,6 +719,7 @@
         </main>
     </div>
 
+    <!-- Export Modal Dialog -->
     <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 hidden p-4 no-print">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl text-slate-200">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -785,7 +786,7 @@
             xAxisLabel: 'x',
             yAxisLabel: 'y',
 
-            arrowPosition: 'none', // 'both', 'positive', 'none'
+            arrowPosition: 'both', // 'both', 'positive', 'none'
             arrowStyle: 'triangle', // 'triangle', 'stealth', 'barb'
             arrowSize: 'medium', // 'small', 'medium', 'large'
 
@@ -916,7 +917,7 @@
             if (config.transparentBg) svg.classList.add('checkerboard-bg');
             svg.style.borderRadius = "8px";
 
-            // Padding configured to give clean margins for multi-digit labels (e.g. 1000)
+            // Padding configured to give clean margins for multi-digit labels & axis overhangs
             const paddingLeft = 65;
             const paddingRight = 45;
             const paddingTop = 45;
@@ -942,20 +943,20 @@
 
             function toPx(x, y = 0) {
                 const px = offsetX + ((x - config.xMin) / xRange) * plotW;
-                const py = is1D ? offsetY : (actualHeight - paddingBottom - ((y - config.yMin) / yRange) * plotH);
+                const py = is1D ? offsetY : (offsetY + plotH - ((y - config.yMin) / yRange) * plotH);
                 return { x: px, y: py };
             }
 
             function toMath(px, py) {
                 const x = config.xMin + ((px - offsetX) / plotW) * xRange;
-                const y = is1D ? 0 : config.yMin + ((actualHeight - py - paddingBottom) / plotH) * yRange;
+                const y = is1D ? 0 : config.yMin + ((offsetY + plotH - py) / plotH) * yRange;
                 return { x, y };
             }
 
             const defs = document.createElementNS(svgNS, "defs");
 
             // Custom Arrow Markers
-            const sizeMap = { small: { w: 4, h: 4, ref: 5 }, medium: { w: 6, h: 6, ref: 6 }, large: { w: 8, h: 8, ref: 7 } };
+            const sizeMap = { small: { w: 5, h: 5, ref: 5 }, medium: { w: 7, h: 7, ref: 6 }, large: { w: 9, h: 9, ref: 7 } };
             const arrowDim = sizeMap[config.arrowSize] || sizeMap.medium;
 
             let arrowPathD = "M 0 0 L 10 5 L 0 10 z";
@@ -1055,40 +1056,57 @@
             gAxes.setAttribute("stroke-width", config.axisWidth);
 
             const originPx = toPx(0, 0);
+            const axisOverhang = 14; // Extension past boundary for arrows
 
             // X-Axis Line
             if (config.showXAxis) {
                 const xAxis = document.createElementNS(svgNS, "line");
                 const p1 = toPx(config.xMin, 0);
                 const p2 = toPx(config.xMax, 0);
-                const clampedY = is1D ? offsetY : Math.min(Math.max(p1.y, offsetY), actualHeight - paddingBottom);
-                xAxis.setAttribute("x1", Math.max(offsetX, p1.x)); xAxis.setAttribute("y1", clampedY);
-                xAxis.setAttribute("x2", Math.min(width - paddingRight, p2.x)); xAxis.setAttribute("y2", clampedY);
+                const clampedY = is1D ? offsetY : Math.min(Math.max(p1.y, offsetY), offsetY + plotH);
                 
+                let x1 = Math.max(offsetX, p1.x);
+                let x2 = Math.min(offsetX + plotW, p2.x);
+
                 if (config.showArrows && config.arrowPosition !== 'none') {
-                    if (config.arrowPosition === 'both') {
+                    if (config.arrowPosition === 'both' && config.xMin < 0) {
+                        x1 -= axisOverhang;
                         xAxis.setAttribute("marker-start", `url(#arrow-start-${gridIndex})`);
                     }
-                    xAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                    if (config.arrowPosition === 'positive' || config.arrowPosition === 'both') {
+                        x2 += axisOverhang;
+                        xAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                    }
                 }
+
+                xAxis.setAttribute("x1", x1); xAxis.setAttribute("y1", clampedY);
+                xAxis.setAttribute("x2", x2); xAxis.setAttribute("y2", clampedY);
                 gAxes.appendChild(xAxis);
             }
 
             // Y-Axis Line
             if (!is1D && config.showYAxis) {
                 const yAxis = document.createElementNS(svgNS, "line");
-                const p1 = toPx(0, config.yMin);
-                const p2 = toPx(0, config.yMax);
-                const clampedX = Math.min(Math.max(p1.x, offsetX), width - paddingRight);
-                yAxis.setAttribute("x1", clampedX); yAxis.setAttribute("y1", Math.min(actualHeight - paddingBottom, p1.y));
-                yAxis.setAttribute("x2", clampedX); yAxis.setAttribute("y2", Math.max(offsetY, p2.y));
-                
+                const p1 = toPx(0, config.yMin); // Bottom
+                const p2 = toPx(0, config.yMax); // Top
+                const clampedX = Math.min(Math.max(p1.x, offsetX), offsetX + plotW);
+
+                let y1 = Math.min(offsetY + plotH, p1.y); // Bottom
+                let y2 = Math.max(offsetY, p2.y); // Top
+
                 if (config.showArrows && config.arrowPosition !== 'none') {
-                    if (config.arrowPosition === 'both') {
+                    if (config.arrowPosition === 'both' && config.yMin < 0) {
+                        y1 += axisOverhang; // Extend downwards
                         yAxis.setAttribute("marker-start", `url(#arrow-start-${gridIndex})`);
                     }
-                    yAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                    if (config.arrowPosition === 'positive' || config.arrowPosition === 'both') {
+                        y2 -= axisOverhang; // Extend upwards
+                        yAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                    }
                 }
+
+                yAxis.setAttribute("x1", clampedX); yAxis.setAttribute("y1", y1);
+                yAxis.setAttribute("x2", clampedX); yAxis.setAttribute("y2", y2);
                 gAxes.appendChild(yAxis);
             }
 
@@ -1099,14 +1117,14 @@
             gText.style.fontFamily = config.labelFontFamily;
             gText.style.fontSize = `${config.fontSize}px`;
 
-            const xAxisPxY = is1D ? offsetY : Math.min(Math.max(originPx.y, offsetY), actualHeight - paddingBottom);
-            const yAxisPxX = Math.min(Math.max(originPx.x, offsetX), width - paddingRight);
+            const xAxisPxY = is1D ? offsetY : Math.min(Math.max(originPx.y, offsetY), offsetY + plotH);
+            const yAxisPxX = Math.min(Math.max(originPx.x, offsetX), offsetX + plotW);
 
             if (config.showXNumbers && config.showXAxis) {
                 for (let x = config.xMin; x <= config.xMax + 1e-7; x += config.xLabelStep) {
                     const cleanX = Number(x.toFixed(6));
                     const pt = toPx(cleanX, 0);
-                    if (pt.x < offsetX - 1 || pt.x > width - paddingRight + 1) continue;
+                    if (pt.x < offsetX - 1 || pt.x > offsetX + plotW + 1) continue;
 
                     const tick = document.createElementNS(svgNS, "line");
                     tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisPxY - 4);
@@ -1127,9 +1145,9 @@
             if (!is1D && config.showYNumbers && config.showYAxis) {
                 for (let y = config.yMin; y <= config.yMax + 1e-7; y += config.yLabelStep) {
                     const cleanY = Number(y.toFixed(6));
-                    if (Math.abs(cleanY) < 1e-7 && config.showXNumbers && config.xMin <= 0 && config.xMax >= 0) continue;
+                    if (Math.abs(cleanY) < 1e-7 && config.showXNumbers && config.xMin < 0 && config.xMax > 0 && config.yMin < 0 && config.yMax > 0) continue;
                     const pt = toPx(0, cleanY);
-                    if (pt.y < offsetY - 1 || pt.y > actualHeight - paddingBottom + 1) continue;
+                    if (pt.y < offsetY - 1 || pt.y > offsetY + plotH + 1) continue;
 
                     const tick = document.createElementNS(svgNS, "line");
                     tick.setAttribute("x1", yAxisPxX - 4); tick.setAttribute("y1", pt.y);
@@ -1154,12 +1172,16 @@
 
             svg.appendChild(gText);
 
-            // Axis Titles
+            // Axis Title Labels
             if (config.xAxisLabel) {
-                renderLatexToSVG(svg, config.xAxisLabel, width - paddingRight + 22, xAxisPxY, config.colorAxis, 14, 'start');
+                const p2 = toPx(config.xMax, 0);
+                const x2 = Math.min(offsetX + plotW, p2.x) + ((config.showArrows && config.arrowPosition !== 'none') ? 22 : 12);
+                renderLatexToSVG(svg, config.xAxisLabel, x2, xAxisPxY, config.colorAxis, 14, 'start');
             }
             if (!is1D && config.yAxisLabel) {
-                renderLatexToSVG(svg, config.yAxisLabel, yAxisPxX, offsetY - 22, config.colorAxis, 14, 'middle');
+                const p2 = toPx(0, config.yMax);
+                const y2 = Math.max(offsetY, p2.y) - ((config.showArrows && config.arrowPosition !== 'none') ? 22 : 12);
+                renderLatexToSVG(svg, config.yAxisLabel, yAxisPxX, y2, config.colorAxis, 14, 'middle');
             }
 
             const gPlottedObjects = document.createElementNS(svgNS, "g");
@@ -1195,7 +1217,7 @@
                         const ptMax = toPx(config.xMax, 0);
                         const ray = document.createElementNS(svgNS, "line");
                         ray.setAttribute("x1", ptA.x); ray.setAttribute("y1", ptA.y);
-                        ray.setAttribute("x2", ptMax.x); ray.setAttribute("y2", ptMax.y);
+                        ray.setAttribute("x2", ptMax.x + 12); ray.setAttribute("y2", ptMax.y);
                         ray.setAttribute("stroke", plot.color);
                         ray.setAttribute("stroke-width", "4");
                         ray.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
@@ -1204,10 +1226,10 @@
                         const ptMin = toPx(config.xMin, 0);
                         const ray = document.createElementNS(svgNS, "line");
                         ray.setAttribute("x1", ptA.x); ray.setAttribute("y1", ptA.y);
-                        ray.setAttribute("x2", ptMin.x); ray.setAttribute("y2", ptMin.y);
+                        ray.setAttribute("x2", ptMin.x - 12); ray.setAttribute("y2", ptMin.y);
                         ray.setAttribute("stroke", plot.color);
                         ray.setAttribute("stroke-width", "4");
-                        ray.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                        ray.setAttribute("marker-end", `url(#arrow-start-${gridIndex})`);
                         gPlot.appendChild(ray);
                     } else if (plot.ineqType === 'interval') {
                         const ptB = toPx(plot.b, 0);
@@ -1836,7 +1858,7 @@
         function resetAll() {
             plots = [];
             config.layoutMode = 'single';
-            config.arrowPosition = 'none';
+            config.arrowPosition = 'both';
             config.arrowStyle = 'triangle';
             config.arrowSize = 'medium';
             applyPreset('standard');
