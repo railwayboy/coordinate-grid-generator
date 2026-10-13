@@ -101,7 +101,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-base tracking-tight text-white flex items-center gap-2">
-                    GridCraft <span class="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">Coordinate Studio</span>
+                    GridCraft <span class="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">Math Studio</span>
                 </h1>
             </div>
         </div>
@@ -109,7 +109,7 @@
         <!-- Mode Selector Switch -->
         <div class="hidden md:flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 text-xs">
             <button id="modeSingleBtn" onclick="setLayoutMode('single')" class="px-3 py-1.5 rounded-md font-medium transition-all bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
-                <i class="fa-solid fa-square"></i> Single Grid Focus
+                <i class="fa-solid fa-square"></i> Single Focus Grid
             </button>
             <button id="modeWorksheetBtn" onclick="setLayoutMode('worksheet')" class="px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
                 <i class="fa-solid fa-file-lines"></i> Multi-Grid Sheet
@@ -152,6 +152,19 @@
 
                 <!-- TAB 1: GRID SETUP -->
                 <div id="content-grid" class="space-y-5">
+                    
+                    <!-- Plane System Type Selector -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-blue-500/30 space-y-2">
+                        <label class="block text-xs font-semibold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-compass"></i> Plane System Mode
+                        </label>
+                        <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800">
+                            <button onclick="setPlaneType('cartesian')" id="planeType-cartesian" class="py-1.5 rounded bg-blue-600 text-white text-center transition-all">Cartesian (2D)</button>
+                            <button onclick="setPlaneType('complex')" id="planeType-complex" class="py-1.5 rounded text-slate-400 hover:text-white text-center transition-all">Complex (ℂ)</button>
+                            <button onclick="setPlaneType('numberline')" id="planeType-numberline" class="py-1.5 rounded text-slate-400 hover:text-white text-center transition-all">1D Line</button>
+                        </div>
+                    </div>
+
                     <!-- Preset Selection -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Quick Range Presets</label>
@@ -168,17 +181,17 @@
                                 </div>
                                 <span class="text-[10px] text-slate-500">0 to 12 (Elementary)</span>
                             </button>
-                            <button onclick="applyPreset('dense')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                            <button onclick="applyPreset('complex')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
                                 <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
-                                    <i class="fa-solid fa-border-all text-emerald-400"></i> High-Density
+                                    <i class="fa-solid fa-atom text-purple-400"></i> Complex Plane
                                 </div>
-                                <span class="text-[10px] text-slate-500">-20 to 20 (Step 2)</span>
+                                <span class="text-[10px] text-slate-500">Re vs Im Axis</span>
                             </button>
-                            <button onclick="applyPreset('dot')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                            <button onclick="applyPreset('numberline')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
                                 <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
-                                    <i class="fa-solid fa-ellipsis text-amber-400"></i> Dot Matrix
+                                    <i class="fa-solid fa-ruler-horizontal text-emerald-400"></i> 1D Number Line
                                 </div>
-                                <span class="text-[10px] text-slate-500">Geoboard / Points</span>
+                                <span class="text-[10px] text-slate-500">Algebra Inequalities</span>
                             </button>
                         </div>
                     </div>
@@ -186,7 +199,7 @@
                     <!-- X-Axis Bounds -->
                     <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
                         <div class="flex justify-between items-center">
-                            <span class="font-semibold text-xs text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="font-semibold text-xs text-blue-400 uppercase tracking-wider flex items-center gap-1.5" id="xAxisBoundsTitle">
                                 <i class="fa-solid fa-arrows-left-right"></i> X-Axis Limits & Labels
                             </span>
                             <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer" title="Keep individual grid boxes square regardless of step differences">
@@ -214,9 +227,9 @@
                         </div>
                     </div>
 
-                    <!-- Y-Axis Bounds -->
-                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
-                        <span class="font-semibold text-xs text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <!-- Y-Axis Bounds (Hidden in 1D Number Line mode) -->
+                    <div id="yAxisBoundsContainer" class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-indigo-400 uppercase tracking-wider flex items-center gap-1.5" id="yAxisBoundsTitle">
                             <i class="fa-solid fa-arrows-up-down"></i> Y-Axis Limits & Labels
                         </span>
                         <div class="grid grid-cols-4 gap-2">
@@ -247,11 +260,11 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="text-[11px] text-slate-400 block mb-1">X-Axis Title</label>
-                                <input type="text" id="xAxisLabel" value="x" oninput="updateConfig('xAxisLabel', this.value)" placeholder="e.g. x, \theta, t \text{(s)}" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                <input type="text" id="xAxisLabel" value="x" oninput="updateConfig('xAxisLabel', this.value)" placeholder="e.g. x, \text{Re}, t" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                             </div>
-                            <div>
+                            <div id="yAxisTitleGroup">
                                 <label class="text-[11px] text-slate-400 block mb-1">Y-Axis Title</label>
-                                <input type="text" id="yAxisLabel" value="y" oninput="updateConfig('yAxisLabel', this.value)" placeholder="e.g. y, f(x), v \text{(m/s)}" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                <input type="text" id="yAxisLabel" value="y" oninput="updateConfig('yAxisLabel', this.value)" placeholder="e.g. y, \text{Im}, f(x)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                             </div>
                         </div>
                     </div>
@@ -308,14 +321,6 @@
                             <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
                                 <input type="checkbox" id="showOrigin" checked onchange="updateConfig('showOrigin', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
                                 Origin '0'
-                            </label>
-                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
-                                <input type="checkbox" id="showBorder" onchange="updateConfig('showBorder', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
-                                Outer Frame
-                            </label>
-                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
-                                <input type="checkbox" id="showMinorGrid" checked onchange="updateConfig('showMinorGrid', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
-                                Minor Sub-grid
                             </label>
                         </div>
                     </div>
@@ -411,66 +416,36 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Line Thickness Weights -->
-                    <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
-                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Line Thickness Controls</label>
-                        <div class="space-y-3">
-                            <div>
-                                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-                                    <span>Main Axes Thickness</span>
-                                    <span id="valAxisWidth">2px</span>
-                                </div>
-                                <input type="range" id="axisWidth" min="1" max="5" step="0.5" value="2" oninput="updateConfig('axisWidth', parseFloat(this.value)); document.getElementById('valAxisWidth').innerText=this.value+'px'" class="w-full accent-blue-500">
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-                                    <span>Major Grid Lines</span>
-                                    <span id="valGridWidth">1px</span>
-                                </div>
-                                <input type="range" id="gridWidth" min="0.5" max="3" step="0.5" value="1" oninput="updateConfig('gridWidth', parseFloat(this.value)); document.getElementById('valGridWidth').innerText=this.value+'px'" class="w-full accent-blue-500">
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- TAB 3: OBJECTS & PLOTS WITH EXPANDED COLOR SELECTOR -->
+                <!-- TAB 3: OBJECTS & PLOTS -->
                 <div id="content-plots" class="hidden space-y-5">
                     <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
                         <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Plot New Element</label>
                         
                         <!-- Element Type Selector -->
-                        <div class="grid grid-cols-4 gap-1.5 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800">
+                        <div class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800">
                             <button onclick="setPlotType('point')" id="plotType-point" class="py-1 rounded bg-blue-600 text-white text-center transition-all">Point</button>
                             <button onclick="setPlotType('function')" id="plotType-function" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Function</button>
+                            <button onclick="setPlotType('inequality')" id="plotType-inequality" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Inequality</button>
+                            <button onclick="setPlotType('inequality1d')" id="plotType-inequality1d" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">1D Line</button>
                             <button onclick="setPlotType('vector')" id="plotType-vector" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Vector</button>
-                            <button onclick="setPlotType('polygon')" id="plotType-polygon" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Polygon</button>
                         </div>
 
-                        <!-- Expanded Object Color Selector with Black & Custom Color Picker -->
+                        <!-- Object Color Selector -->
                         <div class="space-y-1.5 pt-1">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-slate-300 font-medium">Object Color</span>
                                 <span id="colorNameDisplay" class="text-[10px] text-slate-400 font-mono">Black (#000000)</span>
                             </div>
                             <div class="flex items-center gap-1.5 flex-wrap bg-slate-950 p-2 rounded-lg border border-slate-800" id="colorPaletteContainer">
-                                <!-- Black (Worksheet standard) -->
                                 <button type="button" onclick="setPlotColor('#000000', this)" title="Black (Print Standard)" class="color-swatch-btn w-6 h-6 rounded-full bg-black border border-slate-600 hover:scale-110 transition-all ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-110"></button>
-                                <!-- Charcoal / Slate -->
-                                <button type="button" onclick="setPlotColor('#334155', this)" title="Charcoal / Slate" class="color-swatch-btn w-6 h-6 rounded-full bg-slate-700 hover:scale-110 transition-all"></button>
-                                <!-- Blue -->
+                                <button type="button" onclick="setPlotColor('#334155', this)" title="Charcoal" class="color-swatch-btn w-6 h-6 rounded-full bg-slate-700 hover:scale-110 transition-all"></button>
                                 <button type="button" onclick="setPlotColor('#2563eb', this)" title="Royal Blue" class="color-swatch-btn w-6 h-6 rounded-full bg-blue-600 hover:scale-110 transition-all"></button>
-                                <!-- Crimson Red -->
                                 <button type="button" onclick="setPlotColor('#dc2626', this)" title="Crimson Red" class="color-swatch-btn w-6 h-6 rounded-full bg-red-600 hover:scale-110 transition-all"></button>
-                                <!-- Emerald Green -->
                                 <button type="button" onclick="setPlotColor('#059669', this)" title="Emerald Green" class="color-swatch-btn w-6 h-6 rounded-full bg-emerald-600 hover:scale-110 transition-all"></button>
-                                <!-- Amber / Orange -->
                                 <button type="button" onclick="setPlotColor('#ea580c', this)" title="Amber Orange" class="color-swatch-btn w-6 h-6 rounded-full bg-orange-600 hover:scale-110 transition-all"></button>
-                                <!-- Purple -->
                                 <button type="button" onclick="setPlotColor('#7c3aed', this)" title="Purple" class="color-swatch-btn w-6 h-6 rounded-full bg-purple-600 hover:scale-110 transition-all"></button>
-                                <!-- Pink -->
-                                <button type="button" onclick="setPlotColor('#db2777', this)" title="Magenta / Pink" class="color-swatch-btn w-6 h-6 rounded-full bg-pink-600 hover:scale-110 transition-all"></button>
-                                <!-- Custom Color Picker -->
                                 <label title="Custom Color Picker" class="w-6 h-6 rounded-full bg-gradient-to-tr from-rose-500 via-indigo-500 to-emerald-400 p-0.5 cursor-pointer hover:scale-110 transition-all flex items-center justify-center shrink-0">
                                     <input type="color" id="plotCustomColorPicker" value="#000000" oninput="setPlotColor(this.value)" class="opacity-0 w-full h-full cursor-pointer">
                                     <i class="fa-solid fa-eye-dropper text-[10px] text-white pointer-events-none drop-shadow"></i>
@@ -478,41 +453,85 @@
                             </div>
                         </div>
 
-                        <!-- Inputs Container -->
+                        <!-- Dynamic Object Inputs -->
                         <div id="plotInputs" class="pt-2">
                             <!-- Point Input -->
                             <div id="inputs-point" class="space-y-2">
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="text-[10px] text-slate-400 block mb-1">X Coordinate</label>
+                                        <label class="text-[10px] text-slate-400 block mb-1">X Coordinate / Real</label>
                                         <input type="number" id="ptX" value="3" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
                                     </div>
                                     <div>
-                                        <label class="text-[10px] text-slate-400 block mb-1">Y Coordinate</label>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Y Coordinate / Imag</label>
                                         <input type="number" id="ptY" value="4" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX Commands Allowed)</label>
-                                    <input type="text" id="ptLabel" value="P_1(3, 4)" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. A, P_1, (2, \frac{\pi}{2})" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX Allowed)</label>
+                                    <input type="text" id="ptLabel" value="P_1(3, 4)" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. A, P_1, 3+4i" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
 
-                            <!-- Function Input with Desmos/LaTeX Math Shortcuts -->
+                            <!-- Function Input -->
                             <div id="inputs-function" class="hidden space-y-2">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-xs font-mono text-blue-400 font-bold">f(x) =</span>
-                                    <input type="text" id="funcExpr" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. \frac{1}{2}x^2 - 3, \sin(x), \sqrt{x}" value="\frac{1}{2}x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                    <span class="text-xs font-mono text-blue-400 font-bold">y =</span>
+                                    <input type="text" id="funcExpr" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. \frac{1}{2}x^2 - 4" value="\frac{1}{2}x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
-                                <!-- Desmos Quick Math Formula Chips -->
-                                <div class="flex flex-wrap gap-1.5 pt-1">
-                                    <span class="text-[10px] text-slate-500 self-center mr-1">LaTeX Snippets:</span>
-                                    <button type="button" onclick="insertLatexSnippet('2x - 1')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">2x-1</button>
-                                    <button type="button" onclick="insertLatexSnippet('\\frac{1}{2}x^2 - 4')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\frac{1}{2}x²</button>
-                                    <button type="button" onclick="insertLatexSnippet('\\sin(x)')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\sin(x)</button>
-                                    <button type="button" onclick="insertLatexSnippet('\\sqrt{x}')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\sqrt{x}</button>
-                                    <button type="button" onclick="insertLatexSnippet('\\pi')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\pi</button>
-                                    <button type="button" onclick="insertLatexSnippet('\\theta')" class="px-2 py-0.5 bg-slate-950 hover:bg-slate-800 text-[10px] font-mono rounded border border-slate-800 text-blue-300">\theta</button>
+                            </div>
+
+                            <!-- 2D Inequality Input with Region Shading -->
+                            <div id="inputs-inequality" class="hidden space-y-2">
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Variable</label>
+                                        <select id="ineqVar" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                            <option value="y" selected>y</option>
+                                            <option value="x">x</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Operator</label>
+                                        <select id="ineqOp" onchange="updateLatexLivePreview(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                            <option value="<=">≤ (Solid)</option>
+                                            <option value="<">&lt; (Dashed)</option>
+                                            <option value=">=">≥ (Solid)</option>
+                                            <option value=">">&gt; (Dashed)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-span-1">
+                                        <label class="text-[10px] text-slate-400 block mb-1">Boundary</label>
+                                        <span class="text-[10px] text-blue-400 font-mono self-center block pt-1">Shaded Region</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Expression f(x)</label>
+                                    <input type="text" id="ineqExpr" oninput="updateLatexLivePreview('y ' + document.getElementById('ineqOp').value + ' ' + this.value)" placeholder="e.g. 2x - 1, x^2 - 3" value="2x - 1" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                </div>
+                            </div>
+
+                            <!-- 1D Number Line Inequality Input -->
+                            <div id="inputs-inequality1d" class="hidden space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Inequality Type</label>
+                                        <select id="ineq1dType" onchange="toggle1dIneqInputs(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                            <option value="gt">x &gt; a (Open Right)</option>
+                                            <option value="gte">x ≥ a (Closed Right)</option>
+                                            <option value="lt">x &lt; a (Open Left)</option>
+                                            <option value="lte">x ≤ a (Closed Left)</option>
+                                            <option value="interval">a &lt; x ≤ b (Interval)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Value (a)</label>
+                                        <input type="number" id="ineq1dA" value="3" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div id="ineq1dBGroup" class="hidden">
+                                    <label class="text-[10px] text-slate-400 block mb-1">Upper Value (b)</label>
+                                    <input type="number" id="ineq1dB" value="7" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
                                 </div>
                             </div>
 
@@ -522,12 +541,6 @@
                                 <input type="number" id="vecY1" placeholder="Y0" value="0" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
                                 <input type="number" id="vecX2" placeholder="X1" value="4" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
                                 <input type="number" id="vecY2" placeholder="Y1" value="3" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
-                            </div>
-
-                            <!-- Polygon Input -->
-                            <div id="inputs-polygon" class="hidden space-y-1">
-                                <input type="text" id="polyPoints" placeholder="(-3,-2),(3,-2),(0,4)" value="(-3,-2),(3,-2),(0,4)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono">
-                                <p class="text-[10px] text-slate-500">Format: (x1,y1),(x2,y2),(x3,y3)...</p>
                             </div>
 
                             <!-- Live KaTeX Expression Preview Box -->
@@ -572,7 +585,7 @@
                         </div>
                         <div>
                             <label class="text-[11px] text-slate-400 block mb-1">Worksheet Title / Topic</label>
-                            <input type="text" id="wsSubtitle" value="Topic: Graphing Linear Equations & Coordinate Geometry" oninput="updateWorksheetHeader()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white">
+                            <input type="text" id="wsSubtitle" value="Topic: Graphing Inequalities & Coordinate Geometry" oninput="updateWorksheetHeader()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white">
                         </div>
                     </div>
 
@@ -580,27 +593,16 @@
                     <div class="space-y-3">
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Page Grid Layout</label>
                         <div class="grid grid-cols-4 gap-2">
-                            <button onclick="setGridGridCount(1)" id="gridCount-1" class="p-2 bg-blue-600 text-white rounded-lg text-center text-xs transition-all font-medium">
-                                1 Grid
-                            </button>
-                            <button onclick="setGridGridCount(2)" id="gridCount-2" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">
-                                2 Grids
-                            </button>
-                            <button onclick="setGridGridCount(4)" id="gridCount-4" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">
-                                4 Grids
-                            </button>
-                            <button onclick="setGridGridCount(6)" id="gridCount-6" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">
-                                6 Grids
-                            </button>
+                            <button onclick="setGridGridCount(1)" id="gridCount-1" class="p-2 bg-blue-600 text-white rounded-lg text-center text-xs transition-all font-medium">1 Grid</button>
+                            <button onclick="setGridGridCount(2)" id="gridCount-2" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">2 Grids</button>
+                            <button onclick="setGridGridCount(4)" id="gridCount-4" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">4 Grids</button>
+                            <button onclick="setGridGridCount(6)" id="gridCount-6" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">6 Grids</button>
                         </div>
                     </div>
 
-                    <!-- Individual Question Prompts -->
                     <div class="space-y-2">
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Problem Prompts & Headers</label>
-                        <div id="worksheetPromptsContainer" class="space-y-2">
-                            <!-- Dynamically injected -->
-                        </div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Problem Prompts</label>
+                        <div id="worksheetPromptsContainer" class="space-y-2"></div>
                     </div>
                 </div>
 
@@ -641,19 +643,18 @@
                     <!-- Printable Worksheet Header Block -->
                     <div id="worksheetHeader" class="w-full mb-6 text-slate-900 border-b-2 border-slate-900 pb-3 hidden">
                         <div id="wsTitleText" class="text-sm font-bold tracking-tight mb-1 text-slate-900">Name: ____________________   Date: _________   Class: ________</div>
-                        <div id="wsSubtitleText" class="text-xs text-slate-600 font-semibold">Topic: Graphing Linear Equations & Coordinate Geometry</div>
+                        <div id="wsSubtitleText" class="text-xs text-slate-600 font-semibold">Topic: Graphing Inequalities & Coordinate Geometry</div>
                     </div>
 
                     <!-- SVG Grid Mount Container -->
-                    <div id="gridGridContainer" class="flex items-center justify-center gap-6 flex-wrap max-w-full">
-                        <!-- SVGs are generated dynamically here -->
-                    </div>
+                    <div id="gridGridContainer" class="flex items-center justify-center gap-6 flex-wrap max-w-full"></div>
                 </div>
 
             </div>
         </main>
     </div>
 
+    <!-- Export Options Modal -->
     <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 hidden p-4 no-print">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl text-slate-200">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -669,30 +670,24 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Image Export Resolution</label>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setExportScale(1)" id="scale-1" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all">
-                            Standard (1x)<br><span class="text-[10px] text-slate-500">Screen Quality</span>
-                        </button>
-                        <button onclick="setExportScale(2)" id="scale-2" class="p-2.5 rounded-lg border border-blue-500 bg-blue-500/10 text-xs font-medium text-center transition-all text-blue-400">
-                            HD Crisp (2x)<br><span class="text-[10px] text-blue-300">High Quality</span>
-                        </button>
-                        <button onclick="setExportScale(4)" id="scale-4" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all">
-                            Ultra HD (4x)<br><span class="text-[10px] text-slate-500">300 DPI Print</span>
-                        </button>
+                        <button onclick="setExportScale(1)" id="scale-1" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all">Standard (1x)</button>
+                        <button onclick="setExportScale(2)" id="scale-2" class="p-2.5 rounded-lg border border-blue-500 bg-blue-500/10 text-xs font-medium text-center transition-all text-blue-400">HD Crisp (2x)</button>
+                        <button onclick="setExportScale(4)" id="scale-4" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all">Ultra HD (4x)</button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 pt-2">
-                    <button onclick="downloadPNG()" class="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-600/20">
+                    <button onclick="downloadPNG()" class="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
                         <i class="fa-solid fa-file-image text-lg"></i>
                         <span>Download PNG</span>
                     </button>
-                    <button onclick="downloadSVG()" class="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-indigo-600/20">
+                    <button onclick="downloadSVG()" class="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
                         <i class="fa-solid fa-vector-square text-lg"></i>
                         <span>Download Vector SVG</span>
                     </button>
-                    <button onclick="copyImageToClipboard()" class="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-600/20">
+                    <button onclick="copyImageToClipboard()" class="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
                         <i class="fa-solid fa-copy text-lg"></i>
-                        <span>Copy Image to Clipboard</span>
+                        <span>Copy PNG to Clipboard</span>
                     </button>
                     <button onclick="printWorksheet()" class="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
                         <i class="fa-solid fa-print text-lg"></i>
@@ -703,7 +698,7 @@
         </div>
     </div>
 
-    <!-- Notification Toast -->
+    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-blue-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 text-xs no-print">
         <i id="toastIcon" class="fa-solid fa-circle-check text-blue-400 text-base"></i>
         <span id="toastMsg">Action completed successfully!</span>
@@ -712,70 +707,66 @@
     <script>
         // Core Grid Configuration State
         let config = {
+            planeType: 'cartesian', // 'cartesian', 'complex', 'numberline'
             xMin: -10,
             xMax: 10,
             xStep: 1,
-            xLabelStep: 2, // Number label frequency step
+            xLabelStep: 2,
             yMin: -10,
             yMax: 10,
             yStep: 1,
-            yLabelStep: 2, // Number label frequency step
-            keepSquareCells: true, // Keep grid boxes square even if xStep != yStep
+            yLabelStep: 2,
+            keepSquareCells: true,
             
-            // Custom Axis Titles (LaTeX supported)
             xAxisLabel: 'x',
             yAxisLabel: 'y',
 
             subdivisions: 2,
-            gridType: 'lines', // 'lines', 'dashed', 'dots', 'none'
+            gridType: 'lines',
             showXAxis: true,
             showYAxis: true,
             showXNumbers: true,
             showYNumbers: true,
             showArrows: true,
             showOrigin: true,
-            showBorder: false,
-            showMinorGrid: true,
             
-            // Visual Styles
             transparentBg: false,
             colorBg: '#ffffff',
             colorAxis: '#0f172a',
             colorGrid: '#cbd5e1',
             colorMinor: '#f1f5f9',
             fontFamily: 'Inter, sans-serif',
-            labelFontFamily: 'Inter, sans-serif', // Separate font for axis numbers
+            labelFontFamily: 'Inter, sans-serif',
             fontSize: 13,
             axisWidth: 2,
             gridWidth: 1,
             minorWidth: 0.5,
             
-            // Worksheets & Layouts
-            layoutMode: 'single', // 'single' or 'worksheet'
-            gridCount: 1, // 1, 2, 4, 6
+            layoutMode: 'single',
+            gridCount: 1,
             wsTitle: 'Name: ____________________   Date: _________   Class: ________',
-            wsSubtitle: 'Topic: Graphing Linear Equations & Coordinate Geometry',
+            wsSubtitle: 'Topic: Graphing Inequalities & Coordinate Geometry',
             prompts: [
-                '1. Plot the given points or functions on the coordinate plane:',
-                '2. Graph the linear equation y = mx + b:',
-                '3. State the coordinates of the shape vertices:',
-                '4. Graph the reflection across the y-axis:',
-                '5. Calculate the slope between the points:',
-                '6. Find the midpoint of the line segment:'
+                '1. Graph the inequality with shaded region on the grid:',
+                '2. Plot the complex numbers z1 and z2 on the complex plane:',
+                '3. Graph the 1D inequality on the number line:',
+                '4. State the solution set in interval notation:',
+                '5. Graph the system of linear inequalities:',
+                '6. Calculate the modulus |z| of the given point:'
             ]
         };
 
         const svgNS = "http://www.w3.org/2000/svg";
-        let plots = []; // Plotted items: { id, type, color, ...params }
+        let plots = [];
         let currentZoom = 1;
         let exportScale = 2;
         let selectedPlotType = 'point';
-        let selectedColor = '#000000'; // Default color: Black (Worksheet standard)
+        let selectedColor = '#000000';
 
         function renderLatexToSVG(parentGroup, latexStr, x, y, color, fontSize = 13, anchor = 'middle') {
             if (!latexStr || latexStr.trim() === '') return;
             const foreignObj = document.createElementNS(svgNS, "foreignObject");
-            const width = 140;
+            const width = 160;
             const height = 40;
             
             let xPos = x - width / 2;
@@ -814,23 +805,18 @@
         function parseLatexToJS(expr) {
             if (!expr) return '0';
             let js = expr.trim();
-            
             while (js.includes('\\frac')) {
                 js = js.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '(($1)/($2))');
             }
             while (js.includes('\\sqrt')) {
                 js = js.replace(/\\sqrt\s*\{([^{}]+)\}/g, 'Math.sqrt($1)');
             }
-            
             js = js.replace(/\\pi/g, 'Math.PI');
             js = js.replace(/\\sin/g, 'Math.sin');
             js = js.replace(/\\cos/g, 'Math.cos');
             js = js.replace(/\\tan/g, 'Math.tan');
-            js = js.replace(/\\theta/g, 'x');
-            
             js = js.replace(/\^\{([^}]+)\}/g, '**($1)');
             js = js.replace(/\^([0-9a-zA-Z\.\-]+)/g, '**$1');
-            
             js = js.replace(/(\d)\s*([xX\(])/g, '$1*$2');
             js = js.replace(/(\))\s*([xX\d\(])/g, '$1*$2');
             js = js.replace(/([xX])\s*([xX])/g, '$1*$2');
@@ -849,50 +835,50 @@
 
         function createSingleGridSVG(width = 480, height = 480, gridIndex = 0) {
             const svg = document.createElementNS(svgNS, "svg");
+            
+            // Adjust SVG height if in 1D Number Line Mode
+            const is1D = config.planeType === 'numberline';
+            const actualHeight = is1D ? 180 : height;
+
             svg.setAttribute("width", width);
-            svg.setAttribute("height", height);
-            svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+            svg.setAttribute("height", actualHeight);
+            svg.setAttribute("viewBox", `0 0 ${width} ${actualHeight}`);
             svg.style.backgroundColor = config.transparentBg ? 'transparent' : config.colorBg;
-            if (config.transparentBg) {
-                svg.classList.add('checkerboard-bg');
-            }
+            if (config.transparentBg) svg.classList.add('checkerboard-bg');
             svg.style.borderRadius = "8px";
-            svg.setAttribute("data-grid-index", gridIndex);
 
             const padding = 45;
             let plotW = width - padding * 2;
-            let plotH = height - padding * 2;
+            let plotH = actualHeight - padding * 2;
 
             const xRange = config.xMax - config.xMin;
-            const yRange = config.yMax - config.yMin;
+            const yRange = is1D ? 1 : (config.yMax - config.yMin);
 
             const numBoxesX = xRange / config.xStep;
             const numBoxesY = yRange / config.yStep;
 
-            // Maintain uniform 1:1 square grid cells if keepSquareCells is enabled
-            if (config.keepSquareCells && numBoxesX > 0 && numBoxesY > 0) {
+            if (!is1D && config.keepSquareCells && numBoxesX > 0 && numBoxesY > 0) {
                 const boxSize = Math.min(plotW / numBoxesX, plotH / numBoxesY);
                 plotW = boxSize * numBoxesX;
                 plotH = boxSize * numBoxesY;
             }
 
             const offsetX = padding + (width - padding * 2 - plotW) / 2;
-            const offsetY = padding + (height - padding * 2 - plotH) / 2;
+            const offsetY = is1D ? actualHeight / 2 : padding + (actualHeight - padding * 2 - plotH) / 2;
 
-            // Coordinate Transformations
-            function toPx(x, y) {
+            function toPx(x, y = 0) {
                 const px = offsetX + ((x - config.xMin) / xRange) * plotW;
-                const py = height - offsetY - ((y - config.yMin) / yRange) * plotH;
+                const py = is1D ? offsetY : (actualHeight - offsetY - ((y - config.yMin) / yRange) * plotH);
                 return { x: px, y: py };
             }
 
             function toMath(px, py) {
                 const x = config.xMin + ((px - offsetX) / plotW) * xRange;
-                const y = config.yMin + ((height - py - offsetY) / plotH) * yRange;
+                const y = is1D ? 0 : config.yMin + ((actualHeight - py - offsetY) / plotH) * yRange;
                 return { x, y };
             }
 
-            // Defs Arrowhead Marker
+            // Defs Arrow Marker
             const defs = document.createElementNS(svgNS, "defs");
             const marker = document.createElementNS(svgNS, "marker");
             marker.setAttribute("id", `arrow-${gridIndex}`);
@@ -910,69 +896,44 @@
             defs.appendChild(marker);
             svg.appendChild(defs);
 
-            // 1. Minor Sub-Grid Construction
-            if (config.showMinorGrid && config.subdivisions > 1 && config.gridType !== 'none') {
-                const gMinor = document.createElementNS(svgNS, "g");
-                gMinor.setAttribute("stroke", config.colorMinor);
-                gMinor.setAttribute("stroke-width", config.minorWidth);
-                if (config.gridType === 'dashed') gMinor.setAttribute("stroke-dasharray", "2,2");
-
-                const subStepX = config.xStep / config.subdivisions;
-                for (let x = config.xMin; x <= config.xMax; x += subStepX) {
-                    const pt1 = toPx(x, config.yMin);
-                    const pt2 = toPx(x, config.yMax);
-                    const line = document.createElementNS(svgNS, "line");
-                    line.setAttribute("x1", pt1.x); line.setAttribute("y1", pt1.y);
-                    line.setAttribute("x2", pt2.x); line.setAttribute("y2", pt2.y);
-                    gMinor.appendChild(line);
+            if (!is1D && config.gridType !== 'none') {
+                if (config.subdivisions > 1) {
+                    const gMinor = document.createElementNS(svgNS, "g");
+                    gMinor.setAttribute("stroke", config.colorMinor);
+                    gMinor.setAttribute("stroke-width", config.minorWidth);
+                    const subStepX = config.xStep / config.subdivisions;
+                    for (let x = config.xMin; x <= config.xMax; x += subStepX) {
+                        const p1 = toPx(x, config.yMin); const p2 = toPx(x, config.yMax);
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                        gMinor.appendChild(line);
+                    }
+                    const subStepY = config.yStep / config.subdivisions;
+                    for (let y = config.yMin; y <= config.yMax; y += subStepY) {
+                        const p1 = toPx(config.xMin, y); const p2 = toPx(config.xMax, y);
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                        gMinor.appendChild(line);
+                    }
+                    svg.appendChild(gMinor);
                 }
 
-                const subStepY = config.yStep / config.subdivisions;
-                for (let y = config.yMin; y <= config.yMax; y += subStepY) {
-                    const pt1 = toPx(config.xMin, y);
-                    const pt2 = toPx(config.xMax, y);
-                    const line = document.createElementNS(svgNS, "line");
-                    line.setAttribute("x1", pt1.x); line.setAttribute("y1", pt1.y);
-                    line.setAttribute("x2", pt2.x); line.setAttribute("y2", pt2.y);
-                    gMinor.appendChild(line);
-                }
-                svg.appendChild(gMinor);
-            }
-
-            if (config.gridType !== 'none') {
                 const gMajor = document.createElementNS(svgNS, "g");
                 gMajor.setAttribute("stroke", config.colorGrid);
                 gMajor.setAttribute("stroke-width", config.gridWidth);
                 if (config.gridType === 'dashed') gMajor.setAttribute("stroke-dasharray", "4,4");
 
-                if (config.gridType === 'dots') {
-                    for (let x = config.xMin; x <= config.xMax; x += config.xStep) {
-                        for (let y = config.yMin; y <= config.yMax; y += config.yStep) {
-                            const pt = toPx(x, y);
-                            const circle = document.createElementNS(svgNS, "circle");
-                            circle.setAttribute("cx", pt.x); circle.setAttribute("cy", pt.y);
-                            circle.setAttribute("r", "1.5");
-                            circle.setAttribute("fill", config.colorGrid);
-                            gMajor.appendChild(circle);
-                        }
-                    }
-                } else {
-                    for (let x = config.xMin; x <= config.xMax; x += config.xStep) {
-                        const pt1 = toPx(x, config.yMin);
-                        const pt2 = toPx(x, config.yMax);
-                        const line = document.createElementNS(svgNS, "line");
-                        line.setAttribute("x1", pt1.x); line.setAttribute("y1", pt1.y);
-                        line.setAttribute("x2", pt2.x); line.setAttribute("y2", pt2.y);
-                        gMajor.appendChild(line);
-                    }
-                    for (let y = config.yMin; y <= config.yMax; y += config.yStep) {
-                        const pt1 = toPx(config.xMin, y);
-                        const pt2 = toPx(config.xMax, y);
-                        const line = document.createElementNS(svgNS, "line");
-                        line.setAttribute("x1", pt1.x); line.setAttribute("y1", pt1.y);
-                        line.setAttribute("x2", pt2.x); line.setAttribute("y2", pt2.y);
-                        gMajor.appendChild(line);
-                    }
+                for (let x = config.xMin; x <= config.xMax; x += config.xStep) {
+                    const p1 = toPx(x, config.yMin); const p2 = toPx(x, config.yMax);
+                    const line = document.createElementNS(svgNS, "line");
+                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                    gMajor.appendChild(line);
+                }
+                for (let y = config.yMin; y <= config.yMax; y += config.yStep) {
+                    const p1 = toPx(config.xMin, y); const p2 = toPx(config.xMax, y);
+                    const line = document.createElementNS(svgNS, "line");
+                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                    gMajor.appendChild(line);
                 }
                 svg.appendChild(gMajor);
             }
@@ -988,18 +949,18 @@
                 const xAxis = document.createElementNS(svgNS, "line");
                 const p1 = toPx(config.xMin, 0);
                 const p2 = toPx(config.xMax, 0);
-                xAxis.setAttribute("x1", Math.max(offsetX, p1.x)); xAxis.setAttribute("y1", Math.min(Math.max(p1.y, offsetY), height - offsetY));
-                xAxis.setAttribute("x2", Math.min(width - offsetX, p2.x)); xAxis.setAttribute("y2", Math.min(Math.max(p2.y, offsetY), height - offsetY));
+                xAxis.setAttribute("x1", Math.max(offsetX, p1.x)); xAxis.setAttribute("y1", is1D ? offsetY : Math.min(Math.max(p1.y, offsetY), actualHeight - offsetY));
+                xAxis.setAttribute("x2", Math.min(width - offsetX, p2.x)); xAxis.setAttribute("y2", is1D ? offsetY : Math.min(Math.max(p2.y, offsetY), actualHeight - offsetY));
                 if (config.showArrows) xAxis.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
                 gAxes.appendChild(xAxis);
             }
 
-            // Y-Axis Line
-            if (config.showYAxis) {
+            // Y-Axis Line (If not 1D)
+            if (!is1D && config.showYAxis) {
                 const yAxis = document.createElementNS(svgNS, "line");
                 const p1 = toPx(0, config.yMin);
                 const p2 = toPx(0, config.yMax);
-                yAxis.setAttribute("x1", Math.min(Math.max(p1.x, offsetX), width - offsetX)); yAxis.setAttribute("y1", Math.min(height - offsetY, p1.y));
+                yAxis.setAttribute("x1", Math.min(Math.max(p1.x, offsetX), width - offsetX)); yAxis.setAttribute("y1", Math.min(actualHeight - offsetY, p1.y));
                 yAxis.setAttribute("x2", Math.min(Math.max(p2.x, offsetX), width - offsetX)); yAxis.setAttribute("y2", Math.max(offsetY, p2.y));
                 if (config.showArrows) yAxis.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
                 gAxes.appendChild(yAxis);
@@ -1007,71 +968,72 @@
 
             svg.appendChild(gAxes);
 
+            // Numbers & Ticks
             const gText = document.createElementNS(svgNS, "g");
             gText.setAttribute("fill", config.colorAxis);
             gText.style.fontFamily = config.labelFontFamily;
             gText.style.fontSize = `${config.fontSize}px`;
 
+            const xAxisPxY = is1D ? offsetY : Math.min(Math.max(originPx.y, offsetY), actualHeight - offsetY);
             const yAxisPxX = Math.min(Math.max(originPx.x, offsetX), width - offsetX);
-            const xAxisPxY = Math.min(Math.max(originPx.y, offsetY), height - offsetY);
 
-            // X Numbers
             if (config.showXNumbers && config.showXAxis) {
                 for (let x = config.xMin; x <= config.xMax; x += config.xLabelStep) {
                     if (Math.abs(x) < 0.0001 && !config.showOrigin) continue;
                     const pt = toPx(x, 0);
                     if (pt.x < offsetX || pt.x > width - offsetX) continue;
 
-                    // Tick
                     const tick = document.createElementNS(svgNS, "line");
-                    tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisPxY - 3);
-                    tick.setAttribute("x2", pt.x); tick.setAttribute("y2", xAxisPxY + 3);
+                    tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisPxY - 4);
+                    tick.setAttribute("x2", pt.x); tick.setAttribute("y2", xAxisPxY + 4);
                     tick.setAttribute("stroke", config.colorAxis);
                     tick.setAttribute("stroke-width", config.axisWidth);
                     svg.appendChild(tick);
 
-                    // Label Text
                     const txt = document.createElementNS(svgNS, "text");
                     txt.setAttribute("x", pt.x);
-                    txt.setAttribute("y", xAxisPxY + 16);
+                    txt.setAttribute("y", xAxisPxY + 18);
                     txt.setAttribute("text-anchor", "middle");
                     txt.textContent = Number(x.toFixed(2));
                     gText.appendChild(txt);
                 }
             }
 
-            // Y Numbers
-            if (config.showYNumbers && config.showYAxis) {
+            if (!is1D && config.showYNumbers && config.showYAxis) {
                 for (let y = config.yMin; y <= config.yMax; y += config.yLabelStep) {
                     if (Math.abs(y) < 0.0001) continue;
                     const pt = toPx(0, y);
-                    if (pt.y < offsetY || pt.y > height - offsetY) continue;
+                    if (pt.y < offsetY || pt.y > actualHeight - offsetY) continue;
 
-                    // Tick
                     const tick = document.createElementNS(svgNS, "line");
-                    tick.setAttribute("x1", yAxisPxX - 3); tick.setAttribute("y1", pt.y);
-                    tick.setAttribute("x2", yAxisPxX + 3); tick.setAttribute("y2", pt.y);
+                    tick.setAttribute("x1", yAxisPxX - 4); tick.setAttribute("y1", pt.y);
+                    tick.setAttribute("x2", yAxisPxX + 4); tick.setAttribute("y2", pt.y);
                     tick.setAttribute("stroke", config.colorAxis);
                     tick.setAttribute("stroke-width", config.axisWidth);
                     svg.appendChild(tick);
 
-                    // Label Text
                     const txt = document.createElementNS(svgNS, "text");
                     txt.setAttribute("x", yAxisPxX - 8);
                     txt.setAttribute("y", pt.y + 4);
                     txt.setAttribute("text-anchor", "end");
-                    txt.textContent = Number(y.toFixed(2));
+                    
+                    // Complex numbers formatting
+                    if (config.planeType === 'complex') {
+                        txt.textContent = y === 1 ? 'i' : y === -1 ? '-i' : `${y}i`;
+                    } else {
+                        txt.textContent = Number(y.toFixed(2));
+                    }
                     gText.appendChild(txt);
                 }
             }
 
             svg.appendChild(gText);
 
-            // Axis Title Indicators with LaTeX Support
+            // Axis Titles
             if (config.xAxisLabel) {
                 renderLatexToSVG(svg, config.xAxisLabel, width - offsetX + 22, xAxisPxY, config.colorAxis, 14, 'start');
             }
-            if (config.yAxisLabel) {
+            if (!is1D && config.yAxisLabel) {
                 renderLatexToSVG(svg, config.yAxisLabel, yAxisPxX, offsetY - 22, config.colorAxis, 14, 'middle');
             }
 
@@ -1084,7 +1046,7 @@
                     circle.setAttribute("cx", pt.x); circle.setAttribute("cy", pt.y);
                     circle.setAttribute("r", "5");
                     circle.setAttribute("fill", plot.color);
-                    circle.setAttribute("stroke", config.colorBg === 'transparent' || config.transparentBg ? '#0f172a' : config.colorBg);
+                    circle.setAttribute("stroke", config.colorBg);
                     circle.setAttribute("stroke-width", "1.5");
                     gPlot.appendChild(circle);
 
@@ -1092,6 +1054,132 @@
                         renderLatexToSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
                     }
                 } 
+                else if (plot.type === 'inequality1d') {
+                    // 1D Number Line Inequalities with Open/Closed Circles & Directed Rays
+                    const ptA = toPx(plot.a, 0);
+                    const isClosedA = plot.ineqType === 'gte' || plot.ineqType === 'lte' || plot.ineqType === 'interval';
+                    
+                    if (plot.ineqType === 'gt' || plot.ineqType === 'gte') {
+                        const ptMax = toPx(config.xMax, 0);
+                        const ray = document.createElementNS(svgNS, "line");
+                        ray.setAttribute("x1", ptA.x); ray.setAttribute("y1", ptA.y);
+                        ray.setAttribute("x2", ptMax.x); ray.setAttribute("y2", ptMax.y);
+                        ray.setAttribute("stroke", plot.color);
+                        ray.setAttribute("stroke-width", "4");
+                        ray.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                        gPlot.appendChild(ray);
+                    } else if (plot.ineqType === 'lt' || plot.ineqType === 'lte') {
+                        const ptMin = toPx(config.xMin, 0);
+                        const ray = document.createElementNS(svgNS, "line");
+                        ray.setAttribute("x1", ptA.x); ray.setAttribute("y1", ptA.y);
+                        ray.setAttribute("x2", ptMin.x); ray.setAttribute("y2", ptMin.y);
+                        ray.setAttribute("stroke", plot.color);
+                        ray.setAttribute("stroke-width", "4");
+                        ray.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                        gPlot.appendChild(ray);
+                    } else if (plot.ineqType === 'interval') {
+                        const ptB = toPx(plot.b, 0);
+                        const seg = document.createElementNS(svgNS, "line");
+                        seg.setAttribute("x1", ptA.x); seg.setAttribute("y1", ptA.y);
+                        seg.setAttribute("x2", ptB.x); seg.setAttribute("y2", ptB.y);
+                        seg.setAttribute("stroke", plot.color);
+                        seg.setAttribute("stroke-width", "5");
+                        gPlot.appendChild(seg);
+
+                        const circleB = document.createElementNS(svgNS, "circle");
+                        circleB.setAttribute("cx", ptB.x); circleB.setAttribute("cy", ptB.y);
+                        circleB.setAttribute("r", "6");
+                        circleB.setAttribute("fill", plot.color);
+                        circleB.setAttribute("stroke", config.colorBg);
+                        circleB.setAttribute("stroke-width", "2");
+                        gPlot.appendChild(circleB);
+                    }
+
+                    const circleA = document.createElementNS(svgNS, "circle");
+                    circleA.setAttribute("cx", ptA.x); circleA.setAttribute("cy", ptA.y);
+                    circleA.setAttribute("r", "6");
+                    circleA.setAttribute("fill", isClosedA ? plot.color : config.colorBg);
+                    circleA.setAttribute("stroke", plot.color);
+                    circleA.setAttribute("stroke-width", "2.5");
+                    gPlot.appendChild(circleA);
+                }
+                else if (plot.type === 'inequality') {
+                    // 2D Region Shading & Boundary Lines
+                    const samples = 200;
+                    const curvePts = [];
+                    for (let i = 0; i <= samples; i++) {
+                        const xVal = config.xMin + (i / samples) * xRange;
+                        const yVal = evalFunction(plot.expr, xVal);
+                        if (!isNaN(yVal)) {
+                            curvePts.push({ x: xVal, y: yVal, px: toPx(xVal, yVal) });
+                        }
+                    }
+
+                    if (curvePts.length > 1) {
+                        // Region Shading Polygon
+                        const shadePoly = document.createElementNS(svgNS, "polygon");
+                        let polyPoints = "";
+                        
+                        curvePts.forEach(p => { polyPoints += `${p.px.x},${p.px.y} `; });
+                        
+                        const pLast = curvePts[curvePts.length - 1].px;
+                        const pFirst = curvePts[0].px;
+
+                        if (plot.op === '<=' || plot.op === '<') {
+                            const pBottomRight = toPx(config.xMax, config.yMin);
+                            const pBottomLeft = toPx(config.xMin, config.yMin);
+                            polyPoints += `${pBottomRight.x},${pBottomRight.y} ${pBottomLeft.x},${pBottomLeft.y}`;
+                        } else {
+                            const pTopRight = toPx(config.xMax, config.yMax);
+                            const pTopLeft = toPx(config.xMin, config.yMax);
+                            polyPoints += `${pTopRight.x},${pTopRight.y} ${pTopLeft.x},${pTopLeft.y}`;
+                        }
+
+                        shadePoly.setAttribute("points", polyPoints);
+                        shadePoly.setAttribute("fill", plot.color);
+                        shadePoly.setAttribute("fill-opacity", "0.25");
+                        gPlot.appendChild(shadePoly);
+
+                        // Boundary Line
+                        const boundaryPath = document.createElementNS(svgNS, "path");
+                        let d = "";
+                        curvePts.forEach((p, idx) => {
+                            d += (idx === 0 ? "M " : "L ") + `${p.px.x} ${p.px.y} `;
+                        });
+                        boundaryPath.setAttribute("d", d);
+                        boundaryPath.setAttribute("fill", "none");
+                        boundaryPath.setAttribute("stroke", plot.color);
+                        boundaryPath.setAttribute("stroke-width", "2.5");
+                        if (plot.op === '<' || plot.op === '>') {
+                            boundaryPath.setAttribute("stroke-dasharray", "6,6");
+                        }
+                        gPlot.appendChild(boundaryPath);
+                    }
+                }
+                else if (plot.type === 'function') {
+                    const path = document.createElementNS(svgNS, "path");
+                    let d = "";
+                    let isDrawing = false;
+                    const samples = 240;
+
+                    for (let i = 0; i <= samples; i++) {
+                        const xVal = config.xMin + (i / samples) * xRange;
+                        const yVal = evalFunction(plot.expr, xVal);
+                        if (typeof yVal === 'number' && !isNaN(yVal) && isFinite(yVal)) {
+                            const pt = toPx(xVal, yVal);
+                            if (!isDrawing) { d += `M ${pt.x} ${pt.y} `; isDrawing = true; }
+                            else { d += `L ${pt.x} ${pt.y} `; }
+                        } else { isDrawing = false; }
+                    }
+
+                    if (d) {
+                        path.setAttribute("d", d);
+                        path.setAttribute("fill", "none");
+                        path.setAttribute("stroke", plot.color);
+                        path.setAttribute("stroke-width", "2.5");
+                        gPlot.appendChild(path);
+                    }
+                }
                 else if (plot.type === 'vector') {
                     const p1 = toPx(plot.x1, plot.y1);
                     const p2 = toPx(plot.x2, plot.y2);
@@ -1103,91 +1191,49 @@
                     line.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
                     gPlot.appendChild(line);
                 }
-                else if (plot.type === 'polygon') {
-                    const ptsString = plot.points.map(p => {
-                        const pt = toPx(p.x, p.y);
-                        return `${pt.x},${pt.y}`;
-                    }).join(" ");
-                    const poly = document.createElementNS(svgNS, "polygon");
-                    poly.setAttribute("points", ptsString);
-                    poly.setAttribute("fill", plot.color);
-                    poly.setAttribute("fill-opacity", "0.2");
-                    poly.setAttribute("stroke", plot.color);
-                    poly.setAttribute("stroke-width", "2");
-                    gPlot.appendChild(poly);
-                }
-                else if (plot.type === 'function') {
-                    const path = document.createElementNS(svgNS, "path");
-                    let d = "";
-                    let isDrawing = false;
-                    const samples = 280;
-
-                    for (let i = 0; i <= samples; i++) {
-                        const xVal = config.xMin + (i / samples) * xRange;
-                        try {
-                            const yVal = evalFunction(plot.expr, xVal);
-                            if (typeof yVal === 'number' && !isNaN(yVal) && isFinite(yVal)) {
-                                const pt = toPx(xVal, yVal);
-                                if (pt.y >= offsetY - 20 && pt.y <= height - offsetY + 20) {
-                                    if (!isDrawing) {
-                                        d += `M ${pt.x} ${pt.y} `;
-                                        isDrawing = true;
-                                    } else {
-                                        d += `L ${pt.x} ${pt.y} `;
-                                    }
-                                } else {
-                                    isDrawing = false;
-                                }
-                            } else {
-                                isDrawing = false;
-                            }
-                        } catch (e) {
-                            isDrawing = false;
-                        }
-                    }
-
-                    if (d) {
-                        path.setAttribute("d", d);
-                        path.setAttribute("fill", "none");
-                        path.setAttribute("stroke", plot.color);
-                        path.setAttribute("stroke-width", "2.5");
-                        path.setAttribute("stroke-linecap", "round");
-                        gPlot.appendChild(path);
-                    }
-                }
 
                 svg.appendChild(gPlot);
             });
 
-            // Interactive Click to Add Point & Coordinate Tracker
+            // Interactive Click Handler
             svg.addEventListener("mousemove", (e) => {
                 const rect = svg.getBoundingClientRect();
                 const px = (e.clientX - rect.left) * (width / rect.width);
-                const py = (e.clientY - rect.top) * (height / rect.height);
+                const py = (e.clientY - rect.top) * (actualHeight / rect.height);
                 const coords = toMath(px, py);
-                if (coords.x >= config.xMin && coords.x <= config.xMax && coords.y >= config.yMin && coords.y <= config.yMax) {
-                    document.getElementById("coordDisplay").innerText = `X: ${coords.x.toFixed(2)}, Y: ${coords.y.toFixed(2)}`;
+                if (coords.x >= config.xMin && coords.x <= config.xMax) {
+                    if (is1D) {
+                        document.getElementById("coordDisplay").innerText = `X: ${coords.x.toFixed(2)}`;
+                    } else {
+                        const yTxt = config.planeType === 'complex' ? `${coords.y.toFixed(2)}i` : coords.y.toFixed(2);
+                        document.getElementById("coordDisplay").innerText = `X: ${coords.x.toFixed(2)}, Y: ${yTxt}`;
+                    }
                 }
             });
 
             svg.addEventListener("click", (e) => {
                 const rect = svg.getBoundingClientRect();
                 const px = (e.clientX - rect.left) * (width / rect.width);
-                const py = (e.clientY - rect.top) * (height / rect.height);
+                const py = (e.clientY - rect.top) * (actualHeight / rect.height);
                 const coords = toMath(px, py);
-                if (coords.x >= config.xMin && coords.x <= config.xMax && coords.y >= config.yMin && coords.y <= config.yMax) {
+                if (coords.x >= config.xMin && coords.x <= config.xMax) {
                     const snapX = Math.round(coords.x * 2) / 2;
-                    const snapY = Math.round(coords.y * 2) / 2;
+                    const snapY = is1D ? 0 : Math.round(coords.y * 2) / 2;
+                    
+                    let lbl = `(${snapX}, ${snapY})`;
+                    if (config.planeType === 'complex') lbl = `${snapX} + ${snapY}i`;
+                    if (is1D) lbl = `x = ${snapX}`;
+
                     plots.push({
                         id: Date.now(),
                         type: 'point',
                         x: snapX,
                         y: snapY,
-                        label: `(${snapX}, ${snapY})`,
+                        label: lbl,
                         color: selectedColor
                     });
                     render();
-                    showToast(`Added Point (${snapX}, ${snapY})`);
+                    showToast(`Plotted point at ${snapX}`);
                 }
             });
 
@@ -1199,14 +1245,11 @@
             container.innerHTML = "";
 
             const wsHeader = document.getElementById("worksheetHeader");
-            if (config.layoutMode === 'worksheet') {
-                wsHeader.classList.remove("hidden");
-            } else {
-                wsHeader.classList.add("hidden");
-            }
+            if (config.layoutMode === 'worksheet') wsHeader.classList.remove("hidden");
+            else wsHeader.classList.add("hidden");
 
             const count = config.layoutMode === 'worksheet' ? config.gridCount : 1;
-            const dimsText = `${Math.abs(config.xMax - config.xMin)}x${Math.abs(config.yMax - config.yMin)} Grid`;
+            const dimsText = config.planeType === 'numberline' ? `${Math.abs(config.xMax - config.xMin)} Unit Line` : `${Math.abs(config.xMax - config.xMin)}x${Math.abs(config.yMax - config.yMin)} Grid`;
             document.getElementById("gridDimensionsText").innerText = dimsText;
 
             let size = 480;
@@ -1232,6 +1275,40 @@
             renderPlotList();
         }
 
+        function setPlaneType(type) {
+            config.planeType = type;
+            ['cartesian', 'complex', 'numberline'].forEach(p => {
+                const btn = document.getElementById(`planeType-${p}`);
+                if (p === type) btn.className = "py-1.5 rounded bg-blue-600 text-white text-center transition-all";
+                else btn.className = "py-1.5 rounded text-slate-400 hover:text-white text-center transition-all";
+            });
+
+            const yContainer = document.getElementById('yAxisBoundsContainer');
+            const yGroup = document.getElementById('yAxisTitleGroup');
+
+            if (type === 'numberline') {
+                yContainer.classList.add('hidden');
+                yGroup.classList.add('hidden');
+                config.xAxisLabel = 'x';
+            } else if (type === 'complex') {
+                yContainer.classList.remove('hidden');
+                yGroup.classList.remove('hidden');
+                config.xAxisLabel = '\\text{Re}';
+                config.yAxisLabel = '\\text{Im}';
+                document.getElementById('xAxisLabel').value = config.xAxisLabel;
+                document.getElementById('yAxisLabel').value = config.yAxisLabel;
+            } else {
+                yContainer.classList.remove('hidden');
+                yGroup.classList.remove('hidden');
+                config.xAxisLabel = 'x';
+                config.yAxisLabel = 'y';
+                document.getElementById('xAxisLabel').value = config.xAxisLabel;
+                document.getElementById('yAxisLabel').value = config.yAxisLabel;
+            }
+
+            render();
+        }
+
         function updateConfig(key, value) {
             config[key] = value;
             render();
@@ -1253,21 +1330,20 @@
 
         function applyPreset(name) {
             if (name === 'standard') {
+                setPlaneType('cartesian');
                 config.xMin = -10; config.xMax = 10; config.xStep = 1; config.xLabelStep = 2;
                 config.yMin = -10; config.yMax = 10; config.yStep = 1; config.yLabelStep = 2;
-                config.gridType = 'lines';
             } else if (name === 'q1') {
+                setPlaneType('cartesian');
                 config.xMin = 0; config.xMax = 12; config.xStep = 1; config.xLabelStep = 1;
                 config.yMin = 0; config.yMax = 12; config.yStep = 1; config.yLabelStep = 1;
-                config.gridType = 'lines';
-            } else if (name === 'dense') {
-                config.xMin = -20; config.xMax = 20; config.xStep = 2; config.xLabelStep = 5;
-                config.yMin = -20; config.yMax = 20; config.yStep = 2; config.yLabelStep = 5;
-                config.gridType = 'lines';
-            } else if (name === 'dot') {
+            } else if (name === 'complex') {
+                setPlaneType('complex');
                 config.xMin = -8; config.xMax = 8; config.xStep = 1; config.xLabelStep = 2;
                 config.yMin = -8; config.yMax = 8; config.yStep = 1; config.yLabelStep = 2;
-                config.gridType = 'dots';
+            } else if (name === 'numberline') {
+                setPlaneType('numberline');
+                config.xMin = -10; config.xMax = 10; config.xStep = 1; config.xLabelStep = 2;
             }
 
             document.getElementById('xMin').value = config.xMin;
@@ -1280,7 +1356,6 @@
             document.getElementById('yStep').value = config.yStep;
             document.getElementById('yLabelStep').value = config.yLabelStep;
 
-            document.getElementById('gridType').value = config.gridType;
             render();
         }
 
@@ -1305,7 +1380,7 @@
 
         function setPlotType(type) {
             selectedPlotType = type;
-            ['point', 'function', 'vector', 'polygon'].forEach(t => {
+            ['point', 'function', 'inequality', 'inequality1d', 'vector'].forEach(t => {
                 const btn = document.getElementById(`plotType-${t}`);
                 const inputDiv = document.getElementById(`inputs-${t}`);
                 if (t === type) {
@@ -1320,47 +1395,22 @@
 
         function setPlotColor(color, element = null) {
             selectedColor = color;
-            
-            // Update color picker input value
             const customPicker = document.getElementById('plotCustomColorPicker');
-            if (customPicker) {
-                customPicker.value = color;
-            }
+            if (customPicker) customPicker.value = color;
 
-            // Update text color display name
             const colorDisplay = document.getElementById('colorNameDisplay');
-            if (colorDisplay) {
-                const colorNames = {
-                    '#000000': 'Black (#000000)',
-                    '#334155': 'Charcoal Slate (#334155)',
-                    '#2563eb': 'Royal Blue (#2563eb)',
-                    '#dc2626': 'Crimson Red (#dc2626)',
-                    '#059669': 'Emerald Green (#059669)',
-                    '#ea580c': 'Amber Orange (#ea580c)',
-                    '#7c3aed': 'Purple (#7c3aed)',
-                    '#db2777': 'Magenta Pink (#db2777)'
-                };
-                colorDisplay.innerText = colorNames[color.toLowerCase()] || `Custom (${color})`;
-            }
+            if (colorDisplay) colorDisplay.innerText = color;
 
-            // Remove active ring highlights from all swatch buttons
             const swatches = document.querySelectorAll('.color-swatch-btn');
-            swatches.forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-900', 'scale-110');
-            });
+            swatches.forEach(btn => btn.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-900', 'scale-110'));
 
-            // Highlight the clicked swatch button if provided
-            if (element) {
-                element.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-900', 'scale-110');
-            } else {
-                // Find matching swatch by color if color picker was used directly
-                swatches.forEach(btn => {
-                    const onclickAttr = btn.getAttribute('onclick');
-                    if (onclickAttr && onclickAttr.toLowerCase().includes(color.toLowerCase())) {
-                        btn.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-900', 'scale-110');
-                    }
-                });
-            }
+            if (element) element.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-900', 'scale-110');
+        }
+
+        function toggle1dIneqInputs(val) {
+            const bGroup = document.getElementById('ineq1dBGroup');
+            if (val === 'interval') bGroup.classList.remove('hidden');
+            else bGroup.classList.add('hidden');
         }
 
         function addPlotElement() {
@@ -1372,25 +1422,25 @@
             } else if (selectedPlotType === 'function') {
                 const expr = document.getElementById('funcExpr').value || 'x';
                 plots.push({ id: Date.now(), type: 'function', expr, color: selectedColor });
+            } else if (selectedPlotType === 'inequality') {
+                const expr = document.getElementById('ineqExpr').value || 'x';
+                const op = document.getElementById('ineqOp').value;
+                const v = document.getElementById('ineqVar').value;
+                plots.push({ id: Date.now(), type: 'inequality', expr, op, var: v, color: selectedColor });
+            } else if (selectedPlotType === 'inequality1d') {
+                const ineqType = document.getElementById('ineq1dType').value;
+                const a = parseFloat(document.getElementById('ineq1dA').value) || 0;
+                const b = parseFloat(document.getElementById('ineq1dB').value) || 0;
+                plots.push({ id: Date.now(), type: 'inequality1d', ineqType, a, b, color: selectedColor });
             } else if (selectedPlotType === 'vector') {
                 const x1 = parseFloat(document.getElementById('vecX1').value) || 0;
                 const y1 = parseFloat(document.getElementById('vecY1').value) || 0;
                 const x2 = parseFloat(document.getElementById('vecX2').value) || 0;
                 const y2 = parseFloat(document.getElementById('vecY2').value) || 0;
                 plots.push({ id: Date.now(), type: 'vector', x1, y1, x2, y2, color: selectedColor });
-            } else if (selectedPlotType === 'polygon') {
-                const str = document.getElementById('polyPoints').value;
-                const matches = [...str.matchAll(/\(([-0-9\.]+),([-0-9\.]+)\)/g)];
-                const points = matches.map(m => ({ x: parseFloat(m[1]), y: parseFloat(m[2]) }));
-                if (points.length >= 3) {
-                    plots.push({ id: Date.now(), type: 'polygon', points, color: selectedColor });
-                } else {
-                    showToast('Enter at least 3 valid vertices, e.g. (-3,-2),(3,-2),(0,4)');
-                    return;
-                }
             }
             render();
-            showToast('Object plotted on canvas!');
+            showToast('Plotted object on grid!');
         }
 
         function clearAllPlots() {
@@ -1405,19 +1455,17 @@
         }
 
         function formatToLaTeX(p) {
-            if (p.type === 'point') {
-                return p.label ? p.label : `P(${p.x}, ${p.y})`;
-            } 
-            if (p.type === 'vector') {
-                return `\\vec{v} = \\langle ${p.x2 - p.x1}, ${p.y2 - p.y1} \\rangle`;
+            if (p.type === 'point') return p.label ? p.label : `P(${p.x}, ${p.y})`;
+            if (p.type === 'function') return `y = ${p.expr}`;
+            if (p.type === 'inequality') return `y ${p.op.replace('<=', '\\le').replace('>=', '\\ge')} ${p.expr}`;
+            if (p.type === 'inequality1d') {
+                if (p.ineqType === 'gt') return `x > ${p.a}`;
+                if (p.ineqType === 'gte') return `x \\ge ${p.a}`;
+                if (p.ineqType === 'lt') return `x < ${p.a}`;
+                if (p.ineqType === 'lte') return `x \\le ${p.a}`;
+                if (p.ineqType === 'interval') return `${p.a} < x \\le ${p.b}`;
             }
-            if (p.type === 'polygon') {
-                return `\\text{Polygon } (${p.points.length} \\text{ vertices})`;
-            }
-            if (p.type === 'function') {
-                let expr = p.expr || 'x';
-                return `f(x) = ${expr}`;
-            }
+            if (p.type === 'vector') return `\\vec{v} = \\langle ${p.x2 - p.x1}, ${p.y2 - p.y1} \\rangle`;
             return '';
         }
 
@@ -1439,11 +1487,7 @@
                 let renderedMath = latexStr;
 
                 if (window.katex) {
-                    try {
-                        renderedMath = katex.renderToString(latexStr, { throwOnError: false });
-                    } catch (err) {
-                        renderedMath = latexStr;
-                    }
+                    try { renderedMath = katex.renderToString(latexStr, { throwOnError: false }); } catch (err) { renderedMath = latexStr; }
                 }
 
                 item.innerHTML = `
@@ -1459,14 +1503,6 @@
             });
         }
 
-        function insertLatexSnippet(snippet) {
-            const activeInput = document.getElementById('funcExpr') || document.getElementById('ptLabel');
-            if (activeInput) {
-                activeInput.value = snippet;
-                updateLatexLivePreview(snippet);
-            }
-        }
-
         function updateLatexLivePreview(text) {
             const previewEl = document.getElementById('latexLivePreview');
             if (!previewEl) return;
@@ -1474,11 +1510,7 @@
                 previewEl.innerHTML = '<span class="text-slate-600 font-sans italic text-xs">Empty</span>';
                 return;
             }
-            try {
-                previewEl.innerHTML = katex.renderToString(text, { throwOnError: false });
-            } catch(e) {
-                previewEl.textContent = text;
-            }
+            try { previewEl.innerHTML = katex.renderToString(text, { throwOnError: false }); } catch(e) { previewEl.textContent = text; }
         }
 
         function setLayoutMode(mode) {
@@ -1526,7 +1558,7 @@
                 div.className = "space-y-1";
                 div.innerHTML = `
                     <label class="text-[11px] text-slate-400 block">Problem ${i + 1} Prompt</label>
-                    <input type="text" value="${config.prompts[i] || `${i + 1}. Graph the following equation:`}" oninput="config.prompts[${i}] = this.value; render()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                    <input type="text" value="${config.prompts[i] || `${i + 1}. Graph the equation:`}" oninput="config.prompts[${i}] = this.value; render()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
                 `;
                 container.appendChild(div);
             }
@@ -1565,23 +1597,15 @@
             showToast('Reset all grid settings');
         }
 
-        function openExportModal() {
-            document.getElementById('exportModal').classList.remove('hidden');
-        }
-
-        function closeExportModal() {
-            document.getElementById('exportModal').classList.add('hidden');
-        }
+        function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); }
+        function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
 
         function setExportScale(scale) {
             exportScale = scale;
             [1, 2, 4].forEach(s => {
                 const btn = document.getElementById(`scale-${s}`);
-                if (s === scale) {
-                    btn.className = "p-2.5 rounded-lg border border-blue-500 bg-blue-500/10 text-xs font-medium text-center transition-all text-blue-400";
-                } else {
-                    btn.className = "p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all text-slate-300";
-                }
+                if (s === scale) btn.className = "p-2.5 rounded-lg border border-blue-500 bg-blue-500/10 text-xs font-medium text-center transition-all text-blue-400";
+                else btn.className = "p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all text-slate-300";
             });
         }
 
@@ -1599,7 +1623,6 @@
             link.download = `coordinate-grid-${Date.now()}.svg`;
             link.click();
             URL.revokeObjectURL(url);
-            
             showToast('Downloaded SVG Vector!');
         }
 
@@ -1622,12 +1645,8 @@
             const url = URL.createObjectURL(svgBlob);
 
             img.onload = function() {
-                if (config.transparentBg) {
-                    ctx.clearRect(0, 0, width, height);
-                } else {
-                    ctx.fillStyle = config.colorBg;
-                    ctx.fillRect(0, 0, width, height);
-                }
+                if (config.transparentBg) ctx.clearRect(0, 0, width, height);
+                else { ctx.fillStyle = config.colorBg; ctx.fillRect(0, 0, width, height); }
                 ctx.drawImage(img, 0, 0, width, height);
                 
                 const pngUrl = canvas.toDataURL("image/png");
@@ -1661,45 +1680,20 @@
             const url = URL.createObjectURL(svgBlob);
 
             img.onload = async function() {
-                if (config.transparentBg) {
-                    ctx.clearRect(0, 0, width, height);
-                } else {
-                    ctx.fillStyle = config.colorBg;
-                    ctx.fillRect(0, 0, width, height);
-                }
+                if (config.transparentBg) ctx.clearRect(0, 0, width, height);
+                else { ctx.fillStyle = config.colorBg; ctx.fillRect(0, 0, width, height); }
                 ctx.drawImage(img, 0, 0, width, height);
                 URL.revokeObjectURL(url);
 
                 canvas.toBlob(async (blob) => {
-                    if (!blob) {
-                        showToast('Failed to create image blob');
-                        return;
-                    }
-
+                    if (!blob) return;
                     try {
                         if (navigator.clipboard && window.ClipboardItem) {
-                            await navigator.clipboard.write([
-                                new ClipboardItem({ 'image/png': blob })
-                            ]);
+                            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
                             closeExportModal();
-                            showToast('PNG Image copied to clipboard!');
-                        } else {
-                            const dummy = document.createElement('textarea');
-                            document.body.appendChild(dummy);
-                            dummy.value = svgData;
-                            dummy.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(dummy);
-                            closeExportModal();
-                            showToast('Copied SVG markup code to clipboard!');
+                            showToast('PNG copied to clipboard!');
                         }
                     } catch (err) {
-                        const dummy = document.createElement('textarea');
-                        document.body.appendChild(dummy);
-                        dummy.value = svgData;
-                        dummy.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(dummy);
                         closeExportModal();
                         showToast('Copied SVG markup code to clipboard!');
                     }
@@ -1718,16 +1712,14 @@
             const toast = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = msg;
             toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 3000);
         }
 
         window.onload = function() {
             applyPreset('standard');
             setTheme('classic');
             updateWorksheetPromptInputs();
-            updateLatexLivePreview('\\frac{1}{2}x^2 - 4');
+            updateLatexLivePreview('y \\le 2x - 1');
         };
     </script>
 </body>
