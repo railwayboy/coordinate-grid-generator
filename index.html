@@ -269,6 +269,17 @@
                         </div>
                     </div>
 
+                    <!-- System Intersections Toggle -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                        <label class="flex items-center justify-between text-xs font-semibold text-amber-300 cursor-pointer">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-dot text-amber-400"></i> Show System Intersections
+                            </span>
+                            <input type="checkbox" id="showIntersections" onchange="updateConfig('showIntersections', this.checked)" class="rounded bg-slate-800 border-slate-700 text-amber-500 focus:ring-0">
+                        </label>
+                        <p class="text-[10px] text-slate-500 mt-1">Automatically calculates and plots intersection points $(x, y)$ between graphed lines and functions.</p>
+                    </div>
+
                     <!-- Subdivisions & Pattern -->
                     <div class="space-y-3">
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Subdivisions & Grid Pattern</label>
@@ -424,11 +435,11 @@
                         <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Plot New Element</label>
                         
                         <!-- Element Type Selector -->
-                        <div class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800">
+                        <div class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800" id="plotTypeBar">
                             <button onclick="setPlotType('point')" id="plotType-point" class="py-1 rounded bg-blue-600 text-white text-center transition-all">Point</button>
                             <button onclick="setPlotType('function')" id="plotType-function" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Function</button>
                             <button onclick="setPlotType('inequality')" id="plotType-inequality" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Inequality</button>
-                            <button onclick="setPlotType('inequality1d')" id="plotType-inequality1d" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">1D Line</button>
+                            <button onclick="setPlotType('inequality1d')" id="plotType-inequality1d" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all hidden">1D Line</button>
                             <button onclick="setPlotType('vector')" id="plotType-vector" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Vector</button>
                         </div>
 
@@ -493,7 +504,7 @@
                                     </div>
                                     <div>
                                         <label class="text-[10px] text-slate-400 block mb-1">Operator</label>
-                                        <select id="ineqOp" onchange="updateLatexLivePreview(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                        <select id="ineqOp" onchange="updateLatexLivePreview(document.getElementById('ineqVar').value + ' ' + this.value + ' ' + document.getElementById('ineqExpr').value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
                                             <option value="<=">≤ (Solid)</option>
                                             <option value="<">&lt; (Dashed)</option>
                                             <option value=">=">≥ (Solid)</option>
@@ -506,8 +517,8 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Expression f(x)</label>
-                                    <input type="text" id="ineqExpr" oninput="updateLatexLivePreview('y ' + document.getElementById('ineqOp').value + ' ' + this.value)" placeholder="e.g. 2x - 1, x^2 - 3" value="2x - 1" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                    <label class="text-[10px] text-slate-400 block mb-1">Expression f(x) or f(y)</label>
+                                    <input type="text" id="ineqExpr" oninput="updateLatexLivePreview(document.getElementById('ineqVar').value + ' ' + document.getElementById('ineqOp').value + ' ' + this.value)" placeholder="e.g. 2x - 1, x^2 - 3" value="2x - 1" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
 
@@ -729,6 +740,7 @@
             showYNumbers: true,
             showArrows: true,
             showOrigin: true,
+            showIntersections: false,
             
             transparentBg: false,
             colorBg: '#ffffff',
@@ -817,17 +829,17 @@
             js = js.replace(/\\tan/g, 'Math.tan');
             js = js.replace(/\^\{([^}]+)\}/g, '**($1)');
             js = js.replace(/\^([0-9a-zA-Z\.\-]+)/g, '**$1');
-            js = js.replace(/(\d)\s*([xX\(])/g, '$1*$2');
-            js = js.replace(/(\))\s*([xX\d\(])/g, '$1*$2');
-            js = js.replace(/([xX])\s*([xX])/g, '$1*$2');
+            js = js.replace(/(\d)\s*([xXyY\(])/g, '$1*$2');
+            js = js.replace(/(\))\s*([xXyY\d\(])/g, '$1*$2');
+            js = js.replace(/([xXyY])\s*([xXyY])/g, '$1*$2');
             return js;
         }
 
-        function evalFunction(expr, xVal) {
+        function evalFunction(expr, val, varName = 'x') {
             try {
                 const jsExpr = parseLatexToJS(expr);
-                const fn = new Function('x', 'Math', `return ${jsExpr};`);
-                return fn(xVal, Math);
+                const fn = new Function(varName, 'Math', `return ${jsExpr};`);
+                return fn(val, Math);
             } catch(e) {
                 return NaN;
             }
@@ -878,8 +890,10 @@
                 return { x, y };
             }
 
-            // Defs Arrow Marker
+            // Defs Arrow Marker & ClipPath
             const defs = document.createElementNS(svgNS, "defs");
+            
+            // Arrow Marker
             const marker = document.createElementNS(svgNS, "marker");
             marker.setAttribute("id", `arrow-${gridIndex}`);
             marker.setAttribute("viewBox", "0 0 10 10");
@@ -894,6 +908,18 @@
             path.setAttribute("fill", config.colorAxis);
             marker.appendChild(path);
             defs.appendChild(marker);
+
+            // Grid Clip Path for bounded plot curves & shading
+            const clipPath = document.createElementNS(svgNS, "clipPath");
+            clipPath.setAttribute("id", `grid-clip-${gridIndex}`);
+            const clipRect = document.createElementNS(svgNS, "rect");
+            clipRect.setAttribute("x", offsetX);
+            clipRect.setAttribute("y", is1D ? offsetY - 40 : offsetY);
+            clipRect.setAttribute("width", plotW);
+            clipRect.setAttribute("height", is1D ? 80 : plotH);
+            clipPath.appendChild(clipRect);
+            defs.appendChild(clipPath);
+
             svg.appendChild(defs);
 
             if (!is1D && config.gridType !== 'none') {
@@ -902,14 +928,14 @@
                     gMinor.setAttribute("stroke", config.colorMinor);
                     gMinor.setAttribute("stroke-width", config.minorWidth);
                     const subStepX = config.xStep / config.subdivisions;
-                    for (let x = config.xMin; x <= config.xMax; x += subStepX) {
+                    for (let x = config.xMin; x <= config.xMax + 0.0001; x += subStepX) {
                         const p1 = toPx(x, config.yMin); const p2 = toPx(x, config.yMax);
                         const line = document.createElementNS(svgNS, "line");
                         line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
                         gMinor.appendChild(line);
                     }
                     const subStepY = config.yStep / config.subdivisions;
-                    for (let y = config.yMin; y <= config.yMax; y += subStepY) {
+                    for (let y = config.yMin; y <= config.yMax + 0.0001; y += subStepY) {
                         const p1 = toPx(config.xMin, y); const p2 = toPx(config.xMax, y);
                         const line = document.createElementNS(svgNS, "line");
                         line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
@@ -923,13 +949,13 @@
                 gMajor.setAttribute("stroke-width", config.gridWidth);
                 if (config.gridType === 'dashed') gMajor.setAttribute("stroke-dasharray", "4,4");
 
-                for (let x = config.xMin; x <= config.xMax; x += config.xStep) {
+                for (let x = config.xMin; x <= config.xMax + 0.0001; x += config.xStep) {
                     const p1 = toPx(x, config.yMin); const p2 = toPx(x, config.yMax);
                     const line = document.createElementNS(svgNS, "line");
                     line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
                     gMajor.appendChild(line);
                 }
-                for (let y = config.yMin; y <= config.yMax; y += config.yStep) {
+                for (let y = config.yMin; y <= config.yMax + 0.0001; y += config.yStep) {
                     const p1 = toPx(config.xMin, y); const p2 = toPx(config.xMax, y);
                     const line = document.createElementNS(svgNS, "line");
                     line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
@@ -978,10 +1004,10 @@
             const yAxisPxX = Math.min(Math.max(originPx.x, offsetX), width - offsetX);
 
             if (config.showXNumbers && config.showXAxis) {
-                for (let x = config.xMin; x <= config.xMax; x += config.xLabelStep) {
+                for (let x = config.xMin; x <= config.xMax + 0.0001; x += config.xLabelStep) {
                     if (Math.abs(x) < 0.0001 && !config.showOrigin) continue;
                     const pt = toPx(x, 0);
-                    if (pt.x < offsetX || pt.x > width - offsetX) continue;
+                    if (pt.x < offsetX - 1 || pt.x > width - offsetX + 1) continue;
 
                     const tick = document.createElementNS(svgNS, "line");
                     tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisPxY - 4);
@@ -1000,10 +1026,10 @@
             }
 
             if (!is1D && config.showYNumbers && config.showYAxis) {
-                for (let y = config.yMin; y <= config.yMax; y += config.yLabelStep) {
+                for (let y = config.yMin; y <= config.yMax + 0.0001; y += config.yLabelStep) {
                     if (Math.abs(y) < 0.0001) continue;
                     const pt = toPx(0, y);
-                    if (pt.y < offsetY || pt.y > actualHeight - offsetY) continue;
+                    if (pt.y < offsetY - 1 || pt.y > actualHeight - offsetY + 1) continue;
 
                     const tick = document.createElementNS(svgNS, "line");
                     tick.setAttribute("x1", yAxisPxX - 4); tick.setAttribute("y1", pt.y);
@@ -1017,7 +1043,6 @@
                     txt.setAttribute("y", pt.y + 4);
                     txt.setAttribute("text-anchor", "end");
                     
-                    // Complex numbers formatting
                     if (config.planeType === 'complex') {
                         txt.textContent = y === 1 ? 'i' : y === -1 ? '-i' : `${y}i`;
                     } else {
@@ -1037,6 +1062,9 @@
                 renderLatexToSVG(svg, config.yAxisLabel, yAxisPxX, offsetY - 22, config.colorAxis, 14, 'middle');
             }
 
+            const gPlottedObjects = document.createElementNS(svgNS, "g");
+            gPlottedObjects.setAttribute("clip-path", `url(#grid-clip-${gridIndex})`);
+
             plots.forEach(plot => {
                 const gPlot = document.createElementNS(svgNS, "g");
                 
@@ -1055,7 +1083,7 @@
                     }
                 } 
                 else if (plot.type === 'inequality1d') {
-                    // 1D Number Line Inequalities with Open/Closed Circles & Directed Rays
+                    if (config.planeType !== 'numberline') return;
                     const ptA = toPx(plot.a, 0);
                     const isClosedA = plot.ineqType === 'gte' || plot.ineqType === 'lte' || plot.ineqType === 'interval';
                     
@@ -1104,67 +1132,114 @@
                     gPlot.appendChild(circleA);
                 }
                 else if (plot.type === 'inequality') {
-                    // 2D Region Shading & Boundary Lines
-                    const samples = 200;
+                    if (config.planeType === 'numberline') return;
+                    const isVarY = (plot.var || 'y') === 'y';
+                    const samples = 250;
                     const curvePts = [];
-                    for (let i = 0; i <= samples; i++) {
-                        const xVal = config.xMin + (i / samples) * xRange;
-                        const yVal = evalFunction(plot.expr, xVal);
-                        if (!isNaN(yVal)) {
-                            curvePts.push({ x: xVal, y: yVal, px: toPx(xVal, yVal) });
-                        }
-                    }
 
-                    if (curvePts.length > 1) {
-                        // Region Shading Polygon
-                        const shadePoly = document.createElementNS(svgNS, "polygon");
-                        let polyPoints = "";
-                        
-                        curvePts.forEach(p => { polyPoints += `${p.px.x},${p.px.y} `; });
-                        
-                        const pLast = curvePts[curvePts.length - 1].px;
-                        const pFirst = curvePts[0].px;
-
-                        if (plot.op === '<=' || plot.op === '<') {
-                            const pBottomRight = toPx(config.xMax, config.yMin);
-                            const pBottomLeft = toPx(config.xMin, config.yMin);
-                            polyPoints += `${pBottomRight.x},${pBottomRight.y} ${pBottomLeft.x},${pBottomLeft.y}`;
-                        } else {
-                            const pTopRight = toPx(config.xMax, config.yMax);
-                            const pTopLeft = toPx(config.xMin, config.yMax);
-                            polyPoints += `${pTopRight.x},${pTopRight.y} ${pTopLeft.x},${pTopLeft.y}`;
+                    if (isVarY) {
+                        for (let i = 0; i <= samples; i++) {
+                            const xVal = config.xMin + (i / samples) * xRange;
+                            const yVal = evalFunction(plot.expr, xVal, 'x');
+                            if (!isNaN(yVal)) {
+                                curvePts.push({ x: xVal, y: yVal, px: toPx(xVal, yVal) });
+                            }
                         }
 
-                        shadePoly.setAttribute("points", polyPoints);
-                        shadePoly.setAttribute("fill", plot.color);
-                        shadePoly.setAttribute("fill-opacity", "0.25");
-                        gPlot.appendChild(shadePoly);
+                        if (curvePts.length > 1) {
+                            const shadePoly = document.createElementNS(svgNS, "polygon");
+                            let polyPoints = "";
+                            
+                            curvePts.forEach(p => { polyPoints += `${p.px.x},${p.px.y} `; });
+                            
+                            const pMinMin = toPx(config.xMin, config.yMin);
+                            const pMaxMin = toPx(config.xMax, config.yMin);
+                            const pMinMax = toPx(config.xMin, config.yMax);
+                            const pMaxMax = toPx(config.xMax, config.yMax);
 
-                        // Boundary Line
-                        const boundaryPath = document.createElementNS(svgNS, "path");
-                        let d = "";
-                        curvePts.forEach((p, idx) => {
-                            d += (idx === 0 ? "M " : "L ") + `${p.px.x} ${p.px.y} `;
-                        });
-                        boundaryPath.setAttribute("d", d);
-                        boundaryPath.setAttribute("fill", "none");
-                        boundaryPath.setAttribute("stroke", plot.color);
-                        boundaryPath.setAttribute("stroke-width", "2.5");
-                        if (plot.op === '<' || plot.op === '>') {
-                            boundaryPath.setAttribute("stroke-dasharray", "6,6");
+                            if (plot.op === '<=' || plot.op === '<') {
+                                polyPoints += `${pMaxMin.x},${pMaxMin.y} ${pMinMin.x},${pMinMin.y}`;
+                            } else {
+                                polyPoints += `${pMaxMax.x},${pMaxMax.y} ${pMinMax.x},${pMinMax.y}`;
+                            }
+
+                            shadePoly.setAttribute("points", polyPoints);
+                            shadePoly.setAttribute("fill", plot.color);
+                            shadePoly.setAttribute("fill-opacity", "0.22");
+                            gPlot.appendChild(shadePoly);
+
+                            const boundaryPath = document.createElementNS(svgNS, "path");
+                            let d = "";
+                            curvePts.forEach((p, idx) => {
+                                d += (idx === 0 ? "M " : "L ") + `${p.px.x} ${p.px.y} `;
+                            });
+                            boundaryPath.setAttribute("d", d);
+                            boundaryPath.setAttribute("fill", "none");
+                            boundaryPath.setAttribute("stroke", plot.color);
+                            boundaryPath.setAttribute("stroke-width", "2.5");
+                            if (plot.op === '<' || plot.op === '>') {
+                                boundaryPath.setAttribute("stroke-dasharray", "6,6");
+                            }
+                            gPlot.appendChild(boundaryPath);
                         }
-                        gPlot.appendChild(boundaryPath);
+                    } else {
+                        // Inequality for x op f(y)
+                        for (let i = 0; i <= samples; i++) {
+                            const yVal = config.yMin + (i / samples) * yRange;
+                            const xVal = evalFunction(plot.expr, yVal, 'y');
+                            if (!isNaN(xVal)) {
+                                curvePts.push({ x: xVal, y: yVal, px: toPx(xVal, yVal) });
+                            }
+                        }
+
+                        if (curvePts.length > 1) {
+                            const shadePoly = document.createElementNS(svgNS, "polygon");
+                            let polyPoints = "";
+                            
+                            curvePts.forEach(p => { polyPoints += `${p.px.x},${p.px.y} `; });
+                            
+                            const pMinMin = toPx(config.xMin, config.yMin);
+                            const pMinMax = toPx(config.xMin, config.yMax);
+                            const pMaxMin = toPx(config.xMax, config.yMin);
+                            const pMaxMax = toPx(config.xMax, config.yMax);
+
+                            if (plot.op === '<=' || plot.op === '<') {
+                                polyPoints += `${pMinMax.x},${pMinMax.y} ${pMinMin.x},${pMinMin.y}`;
+                            } else {
+                                polyPoints += `${pMaxMax.x},${pMaxMax.y} ${pMaxMin.x},${pMaxMin.y}`;
+                            }
+
+                            shadePoly.setAttribute("points", polyPoints);
+                            shadePoly.setAttribute("fill", plot.color);
+                            shadePoly.setAttribute("fill-opacity", "0.22");
+                            gPlot.appendChild(shadePoly);
+
+                            const boundaryPath = document.createElementNS(svgNS, "path");
+                            let d = "";
+                            curvePts.forEach((p, idx) => {
+                                d += (idx === 0 ? "M " : "L ") + `${p.px.x} ${p.px.y} `;
+                            });
+                            boundaryPath.setAttribute("d", d);
+                            boundaryPath.setAttribute("fill", "none");
+                            boundaryPath.setAttribute("stroke", plot.color);
+                            boundaryPath.setAttribute("stroke-width", "2.5");
+                            if (plot.op === '<' || plot.op === '>') {
+                                boundaryPath.setAttribute("stroke-dasharray", "6,6");
+                            }
+                            gPlot.appendChild(boundaryPath);
+                        }
                     }
                 }
                 else if (plot.type === 'function') {
+                    if (config.planeType === 'numberline') return;
                     const path = document.createElementNS(svgNS, "path");
                     let d = "";
                     let isDrawing = false;
-                    const samples = 240;
+                    const samples = 300;
 
                     for (let i = 0; i <= samples; i++) {
                         const xVal = config.xMin + (i / samples) * xRange;
-                        const yVal = evalFunction(plot.expr, xVal);
+                        const yVal = evalFunction(plot.expr, xVal, 'x');
                         if (typeof yVal === 'number' && !isNaN(yVal) && isFinite(yVal)) {
                             const pt = toPx(xVal, yVal);
                             if (!isDrawing) { d += `M ${pt.x} ${pt.y} `; isDrawing = true; }
@@ -1181,6 +1256,7 @@
                     }
                 }
                 else if (plot.type === 'vector') {
+                    if (config.planeType === 'numberline') return;
                     const p1 = toPx(plot.x1, plot.y1);
                     const p2 = toPx(plot.x2, plot.y2);
                     const line = document.createElementNS(svgNS, "line");
@@ -1192,8 +1268,98 @@
                     gPlot.appendChild(line);
                 }
 
-                svg.appendChild(gPlot);
+                gPlottedObjects.appendChild(gPlot);
             });
+
+            if (config.showIntersections && !is1D) {
+                const functionsToPlot = plots.filter(p => p.type === 'function' || (p.type === 'inequality' && (p.var || 'y') === 'y'));
+                if (functionsToPlot.length >= 2) {
+                    const intersectionsGroup = document.createElementNS(svgNS, "g");
+                    const foundIntersections = [];
+
+                    for (let i = 0; i < functionsToPlot.length; i++) {
+                        for (let j = i + 1; j < functionsToPlot.length; j++) {
+                            const f1 = functionsToPlot[i];
+                            const f2 = functionsToPlot[j];
+                            
+                            const samples = 500;
+                            let prevDiff = null;
+                            let prevX = null;
+
+                            for (let step = 0; step <= samples; step++) {
+                                const xVal = config.xMin + (step / samples) * xRange;
+                                const y1 = evalFunction(f1.expr, xVal, 'x');
+                                const y2 = evalFunction(f2.expr, xVal, 'x');
+
+                                if (!isNaN(y1) && !isNaN(y2) && isFinite(y1) && isFinite(y2)) {
+                                    const diff = y1 - y2;
+
+                                    if (prevDiff !== null && ((prevDiff <= 0 && diff >= 0) || (prevDiff >= 0 && diff <= 0))) {
+                                        // Refine root via bisection
+                                        let lowX = prevX;
+                                        let highX = xVal;
+                                        let rootX = (lowX + highX) / 2;
+
+                                        for (let k = 0; k < 12; k++) {
+                                            rootX = (lowX + highX) / 2;
+                                            const midY1 = evalFunction(f1.expr, rootX, 'x');
+                                            const midY2 = evalFunction(f2.expr, rootX, 'x');
+                                            const midDiff = midY1 - midY2;
+
+                                            if ((prevDiff <= 0 && midDiff <= 0) || (prevDiff >= 0 && midDiff >= 0)) {
+                                                lowX = rootX;
+                                            } else {
+                                                highX = rootX;
+                                            }
+                                        }
+
+                                        const rootY = evalFunction(f1.expr, rootX, 'x');
+                                        if (rootY >= config.yMin && rootY <= config.yMax) {
+                                            const isDuplicate = foundIntersections.some(pt => Math.hypot(pt.x - rootX, pt.y - rootY) < 0.1);
+                                            if (!isDuplicate) {
+                                                foundIntersections.push({ x: rootX, y: rootY });
+                                            }
+                                        }
+                                    }
+
+                                    prevDiff = diff;
+                                    prevX = xVal;
+                                } else {
+                                    prevDiff = null;
+                                    prevX = null;
+                                }
+                            }
+                        }
+                    }
+
+                    foundIntersections.forEach(ptMath => {
+                        const ptPx = toPx(ptMath.x, ptMath.y);
+                        
+                        const halo = document.createElementNS(svgNS, "circle");
+                        halo.setAttribute("cx", ptPx.x); halo.setAttribute("cy", ptPx.y);
+                        halo.setAttribute("r", "8");
+                        halo.setAttribute("fill", "#f59e0b");
+                        halo.setAttribute("fill-opacity", "0.35");
+                        halo.setAttribute("stroke", "#d97706");
+                        halo.setAttribute("stroke-width", "1.5");
+                        intersectionsGroup.appendChild(halo);
+
+                        const dot = document.createElementNS(svgNS, "circle");
+                        dot.setAttribute("cx", ptPx.x); dot.setAttribute("cy", ptPx.y);
+                        dot.setAttribute("r", "4");
+                        dot.setAttribute("fill", "#b45309");
+                        dot.setAttribute("stroke", "#ffffff");
+                        dot.setAttribute("stroke-width", "1.5");
+                        intersectionsGroup.appendChild(dot);
+
+                        renderLatexToSVG(intersectionsGroup, `(${ptMath.x.toFixed(1)}, ${ptMath.y.toFixed(1)})`, ptPx.x + 18, ptPx.y - 10, "#b45309", 11, 'start');
+                    });
+
+                    gPlottedObjects.appendChild(intersectionsGroup);
+                }
+            }
+
+            svg.appendChild(gPlottedObjects);
 
             // Interactive Click Handler
             svg.addEventListener("mousemove", (e) => {
@@ -1285,14 +1451,19 @@
 
             const yContainer = document.getElementById('yAxisBoundsContainer');
             const yGroup = document.getElementById('yAxisTitleGroup');
+            const btn1D = document.getElementById('plotType-inequality1d');
 
             if (type === 'numberline') {
                 yContainer.classList.add('hidden');
                 yGroup.classList.add('hidden');
+                if (btn1D) btn1D.classList.remove('hidden');
+                setPlotType('inequality1d');
                 config.xAxisLabel = 'x';
             } else if (type === 'complex') {
                 yContainer.classList.remove('hidden');
                 yGroup.classList.remove('hidden');
+                if (btn1D) btn1D.classList.add('hidden');
+                if (selectedPlotType === 'inequality1d') setPlotType('point');
                 config.xAxisLabel = '\\text{Re}';
                 config.yAxisLabel = '\\text{Im}';
                 document.getElementById('xAxisLabel').value = config.xAxisLabel;
@@ -1300,6 +1471,8 @@
             } else {
                 yContainer.classList.remove('hidden');
                 yGroup.classList.remove('hidden');
+                if (btn1D) btn1D.classList.add('hidden');
+                if (selectedPlotType === 'inequality1d') setPlotType('point');
                 config.xAxisLabel = 'x';
                 config.yAxisLabel = 'y';
                 document.getElementById('xAxisLabel').value = config.xAxisLabel;
@@ -1383,12 +1556,14 @@
             ['point', 'function', 'inequality', 'inequality1d', 'vector'].forEach(t => {
                 const btn = document.getElementById(`plotType-${t}`);
                 const inputDiv = document.getElementById(`inputs-${t}`);
-                if (t === type) {
-                    btn.className = "py-1 rounded bg-blue-600 text-white text-center transition-all";
-                    inputDiv.classList.remove('hidden');
-                } else {
-                    btn.className = "py-1 rounded text-slate-400 hover:text-white text-center transition-all";
-                    inputDiv.classList.add('hidden');
+                if (btn && inputDiv) {
+                    if (t === type) {
+                        btn.className = "py-1 rounded bg-blue-600 text-white text-center transition-all";
+                        inputDiv.classList.remove('hidden');
+                    } else {
+                        btn.className = "py-1 rounded text-slate-400 hover:text-white text-center transition-all";
+                        inputDiv.classList.add('hidden');
+                    }
                 }
             });
         }
@@ -1457,7 +1632,7 @@
         function formatToLaTeX(p) {
             if (p.type === 'point') return p.label ? p.label : `P(${p.x}, ${p.y})`;
             if (p.type === 'function') return `y = ${p.expr}`;
-            if (p.type === 'inequality') return `y ${p.op.replace('<=', '\\le').replace('>=', '\\ge')} ${p.expr}`;
+            if (p.type === 'inequality') return `${p.var || 'y'} ${p.op.replace('<=', '\\le').replace('>=', '\\ge')} ${p.expr}`;
             if (p.type === 'inequality1d') {
                 if (p.ineqType === 'gt') return `x > ${p.a}`;
                 if (p.ineqType === 'gte') return `x \\ge ${p.a}`;
