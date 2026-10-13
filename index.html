@@ -833,6 +833,34 @@
         let selectedPlotType = 'point';
         let selectedColor = '#000000';
 
+        // Helper to inline CSS styles inside generated SVG defs to ensure rasterization/export works in all sandboxes
+        function ensureSvgNamespacesAndStyles(svgEl) {
+            if (!svgEl) return;
+            if (!svgEl.getAttribute("xmlns")) svgEl.setAttribute("xmlns", svgNS);
+            if (!svgEl.getAttribute("xmlns:xlink")) svgEl.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+
+            let defs = svgEl.querySelector("defs");
+            if (!defs) {
+                defs = document.createElementNS(svgNS, "defs");
+                svgEl.insertBefore(defs, svgEl.firstChild);
+            }
+
+            let style = defs.querySelector("style#embedded-katex-styles");
+            if (!style) {
+                style = document.createElementNS(svgNS, "style");
+                style.setAttribute("id", "embedded-katex-styles");
+                style.textContent = `
+                    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;1,400&display=swap');
+                    .katex { font-family: 'Lora', 'KaTeX_Main', serif; font-size: 1em; line-height: 1.2; text-indent: 0; display: inline-block; }
+                    .katex .mathnormal { font-family: 'Lora', 'KaTeX_Math', serif; font-style: italic; }
+                    .katex .mord { font-family: 'Lora', 'KaTeX_Main', serif; }
+                    .katex .mbin, .katex .mrel { margin: 0 0.2em; }
+                    text { font-family: ${config.labelFontFamily || 'Inter, sans-serif'}; }
+                `;
+                defs.appendChild(style);
+            }
+        }
+
         function renderLatexToSVG(parentGroup, latexStr, x, y, color, fontSize = 13, anchor = 'middle') {
             if (!latexStr || latexStr.trim() === '') return;
             const foreignObj = document.createElementNS(svgNS, "foreignObject");
@@ -917,7 +945,7 @@
             if (config.transparentBg) svg.classList.add('checkerboard-bg');
             svg.style.borderRadius = "8px";
 
-            // Padding configured to give clean margins for multi-digit labels & axis overhangs
+            // Padding configured to give clean margins for multi-digit labels (e.g. 1000)
             const paddingLeft = 65;
             const paddingRight = 45;
             const paddingTop = 45;
@@ -985,14 +1013,10 @@
             markerStart.setAttribute("refY", "5");
             markerStart.setAttribute("markerWidth", arrowDim.w);
             markerStart.setAttribute("markerHeight", arrowDim.h);
-            markerStart.setAttribute("orient", "auto");
-
-            let arrowStartPathD = "M 10 0 L 0 5 L 10 10 z";
-            if (config.arrowStyle === 'stealth') arrowStartPathD = "M 10 0 L 0 5 L 10 10 L 3 5 z";
-            else if (config.arrowStyle === 'barb') arrowStartPathD = "M 10 0 L 0 5 L 10 10 L 7 5 z";
+            markerStart.setAttribute("orient", "auto-start-reverse");
 
             const pathStart = document.createElementNS(svgNS, "path");
-            pathStart.setAttribute("d", arrowStartPathD);
+            pathStart.setAttribute("d", arrowPathD);
             pathStart.setAttribute("fill", config.colorAxis);
             markerStart.appendChild(pathStart);
             defs.appendChild(markerStart);
@@ -1056,7 +1080,7 @@
             gAxes.setAttribute("stroke-width", config.axisWidth);
 
             const originPx = toPx(0, 0);
-            const axisOverhang = 14; // Extension past boundary for arrows
+            const axisOverhang = 14; // Extension past boundary for textbook style arrows
 
             // X-Axis Line
             if (config.showXAxis) {
@@ -1172,7 +1196,7 @@
 
             svg.appendChild(gText);
 
-            // Axis Title Labels
+            // Axis Titles
             if (config.xAxisLabel) {
                 const p2 = toPx(config.xMax, 0);
                 const x2 = Math.min(offsetX + plotW, p2.x) + ((config.showArrows && config.arrowPosition !== 'none') ? 22 : 12);
@@ -1411,6 +1435,9 @@
                     }
                 }
             });
+
+            // Inline css definitions inside SVG element so export blob works properly
+            ensureSvgNamespacesAndStyles(svg);
 
             return svg;
         }
@@ -1880,97 +1907,150 @@
         }
 
         function downloadSVG() {
-            const wrapper = document.getElementById('svgContainerWrapper');
-            const svgEl = wrapper.querySelector('svg');
-            if (!svgEl) return;
+            const svgEl = document.querySelector('#gridGridContainer svg');
+            if (!svgEl) {
+                showToast('No grid available to export');
+                return;
+            }
 
-            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const clone = svgEl.cloneNode(true);
+            ensureSvgNamespacesAndStyles(clone);
+
+            const svgData = new XMLSerializer().serializeToString(clone);
             const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
             const url = URL.createObjectURL(blob);
             
             const link = document.createElement("a");
             link.href = url;
             link.download = `coordinate-grid-${Date.now()}.svg`;
+            document.body.appendChild(link);
             link.click();
-            URL.revokeObjectURL(url);
+            document.body.removeChild(link);
+            
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            closeExportModal();
             showToast('Downloaded SVG Vector!');
         }
 
-        function downloadPNG() {
+        function renderToCanvas(callback) {
             const wrapper = document.getElementById('svgContainerWrapper');
             const svgEl = wrapper.querySelector('svg');
-            if (!svgEl) return;
+            if (!svgEl) { callback(null); return; }
 
-            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const clone = svgEl.cloneNode(true);
+            ensureSvgNamespacesAndStyles(clone);
+
+            const origWidth = parseFloat(svgEl.getAttribute("width")) || 520;
+            const origHeight = parseFloat(svgEl.getAttribute("height")) || 520;
+
+            const width = origWidth * exportScale;
+            const height = origHeight * exportScale;
+
+            clone.setAttribute("width", width);
+            clone.setAttribute("height", height);
+
+            const svgData = new XMLSerializer().serializeToString(clone);
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
-            
-            const width = svgEl.getAttribute("width") * exportScale;
-            const height = svgEl.getAttribute("height") * exportScale;
             canvas.width = width;
             canvas.height = height;
 
+            if (config.transparentBg) {
+                ctx.clearRect(0, 0, width, height);
+            } else {
+                ctx.fillStyle = config.colorBg;
+                ctx.fillRect(0, 0, width, height);
+            }
+
             const img = new Image();
-            const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-            const url = URL.createObjectURL(svgBlob);
+            img.crossOrigin = "anonymous";
+            const encodedSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
 
             img.onload = function() {
-                if (config.transparentBg) ctx.clearRect(0, 0, width, height);
-                else { ctx.fillStyle = config.colorBg; ctx.fillRect(0, 0, width, height); }
                 ctx.drawImage(img, 0, 0, width, height);
-                
-                const pngUrl = canvas.toDataURL("image/png");
-                const link = document.createElement("a");
-                link.href = pngUrl;
-                link.download = `coordinate-grid-${exportScale}x.png`;
-                link.click();
-                URL.revokeObjectURL(url);
-                showToast(`Downloaded PNG (${width}x${height}px)`);
+                callback(canvas);
             };
 
-            img.src = url;
+            img.onerror = function() {
+                // Fallback to Blob URL if Data URI encoding hits string limits
+                const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                const blobUrl = URL.createObjectURL(blob);
+                const img2 = new Image();
+                img2.crossOrigin = "anonymous";
+                img2.onload = function() {
+                    ctx.drawImage(img2, 0, 0, width, height);
+                    URL.revokeObjectURL(blobUrl);
+                    callback(canvas);
+                };
+                img2.onerror = function() {
+                    URL.revokeObjectURL(blobUrl);
+                    showToast('Failed to render PNG canvas image.');
+                    callback(null);
+                };
+                img2.src = blobUrl;
+            };
+
+            img.src = encodedSvg;
         }
 
-        async function copyImageToClipboard() {
-            const wrapper = document.getElementById('svgContainerWrapper');
-            const svgEl = wrapper.querySelector('svg');
-            if (!svgEl) return;
+        function downloadPNG() {
+            renderToCanvas((canvas) => {
+                if (!canvas) return;
+                try {
+                    const pngUrl = canvas.toDataURL("image/png");
+                    const link = document.createElement("a");
+                    link.href = pngUrl;
+                    link.download = `coordinate-grid-${exportScale}x.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    closeExportModal();
+                    showToast(`Downloaded PNG (${canvas.width}x${canvas.height}px)`);
+                } catch(e) {
+                    showToast('Could not generate PNG data URL');
+                }
+            });
+        }
 
-            const svgData = new XMLSerializer().serializeToString(svgEl);
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            
-            const width = svgEl.getAttribute("width") * exportScale;
-            const height = svgEl.getAttribute("height") * exportScale;
-            canvas.width = width;
-            canvas.height = height;
-
-            const img = new Image();
-            const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-            const url = URL.createObjectURL(svgBlob);
-
-            img.onload = async function() {
-                if (config.transparentBg) ctx.clearRect(0, 0, width, height);
-                else { ctx.fillStyle = config.colorBg; ctx.fillRect(0, 0, width, height); }
-                ctx.drawImage(img, 0, 0, width, height);
-                URL.revokeObjectURL(url);
+        function copyImageToClipboard() {
+            renderToCanvas(async (canvas) => {
+                if (!canvas) return;
 
                 canvas.toBlob(async (blob) => {
-                    if (!blob) return;
-                    try {
-                        if (navigator.clipboard && window.ClipboardItem) {
+                    if (!blob) {
+                        showToast('Failed to create image binary');
+                        return;
+                    }
+
+                    let copied = false;
+                    if (navigator.clipboard && window.ClipboardItem) {
+                        try {
                             await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                            copied = true;
                             closeExportModal();
-                            showToast('PNG copied to clipboard!');
+                            showToast('PNG image copied to clipboard!');
+                        } catch (err) {
+                            console.warn('Direct image clipboard copy failed, falling back...', err);
                         }
-                    } catch (err) {
-                        closeExportModal();
-                        showToast('Copied SVG markup code to clipboard!');
+                    }
+
+                    if (!copied) {
+                        const svgEl = document.querySelector('#gridGridContainer svg');
+                        if (svgEl) {
+                            const svgData = new XMLSerializer().serializeToString(svgEl);
+                            const textarea = document.createElement("textarea");
+                            textarea.value = svgData;
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textarea);
+                            closeExportModal();
+                            showToast('Copied SVG markup code to clipboard!');
+                        }
                     }
                 }, 'image/png');
-            };
-
-            img.src = url;
+            });
         }
 
         function printWorksheet() {
