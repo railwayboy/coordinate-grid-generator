@@ -269,6 +269,39 @@
                         </div>
                     </div>
 
+                    <!-- Axis Arrow Customization Panel -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-arrow"></i> Axis Arrow Customization
+                        </span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Arrow Ends</label>
+                                <select id="arrowPosition" onchange="updateConfig('arrowPosition', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                                    <option value="both" selected>Both Ends (← →)</option>
+                                    <option value="positive">Positive Only (→)</option>
+                                    <option value="none">No Arrows</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Arrow Style</label>
+                                <select id="arrowStyle" onchange="updateConfig('arrowStyle', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                                    <option value="triangle" selected>Triangle</option>
+                                    <option value="stealth">Stealth Sharp</option>
+                                    <option value="barb">Slim Barb</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Arrow Size</label>
+                                <select id="arrowSize" onchange="updateConfig('arrowSize', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                                    <option value="small">Small</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="large">Large</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- System Intersections Toggle -->
                     <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
                         <label class="flex items-center justify-between text-xs font-semibold text-amber-300 cursor-pointer">
@@ -434,12 +467,13 @@
                     <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
                         <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Plot New Element</label>
                         
-                        <!-- Element Type Selector -->
+                        <!-- Element Type Selector Bar -->
                         <div class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800" id="plotTypeBar">
                             <button onclick="setPlotType('point')" id="plotType-point" class="py-1 rounded bg-blue-600 text-white text-center transition-all">Point</button>
                             <button onclick="setPlotType('function')" id="plotType-function" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Function</button>
                             <button onclick="setPlotType('inequality')" id="plotType-inequality" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Inequality</button>
                             <button onclick="setPlotType('inequality1d')" id="plotType-inequality1d" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all hidden">1D Line</button>
+                            <button onclick="setPlotType('complex')" id="plotType-complex" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all hidden">Complex</button>
                             <button onclick="setPlotType('vector')" id="plotType-vector" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Vector</button>
                         </div>
 
@@ -470,17 +504,17 @@
                             <div id="inputs-point" class="space-y-2">
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="text-[10px] text-slate-400 block mb-1">X Coordinate / Real</label>
+                                        <label class="text-[10px] text-slate-400 block mb-1">X Coordinate</label>
                                         <input type="number" id="ptX" value="3" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
                                     </div>
                                     <div>
-                                        <label class="text-[10px] text-slate-400 block mb-1">Y Coordinate / Imag</label>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Y Coordinate</label>
                                         <input type="number" id="ptY" value="4" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX Allowed)</label>
-                                    <input type="text" id="ptLabel" value="P_1(3, 4)" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. A, P_1, 3+4i" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                    <input type="text" id="ptLabel" value="P_1(3, 4)" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. A, P_1, (3, 4)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
 
@@ -522,7 +556,7 @@
                                 </div>
                             </div>
 
-                            <!-- 1D Number Line Inequality Input -->
+                            <!-- 1D Number Line Inequality Input (Exclusive to 1D Line mode) -->
                             <div id="inputs-inequality1d" class="hidden space-y-2">
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
@@ -543,6 +577,38 @@
                                 <div id="ineq1dBGroup" class="hidden">
                                     <label class="text-[10px] text-slate-400 block mb-1">Upper Value (b)</label>
                                     <input type="number" id="ineq1dB" value="7" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                </div>
+                            </div>
+
+                            <!-- Complex Number Plot Input (Exclusive to Complex Plane mode) -->
+                            <div id="inputs-complex" class="hidden space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Real Part (Re)</label>
+                                        <input type="number" id="cplxRe" value="3" oninput="updateComplexPreview()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Imaginary Part (Im)</label>
+                                        <input type="number" id="cplxIm" value="4" oninput="updateComplexPreview()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div class="space-y-1 pt-1 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                        <input type="checkbox" id="cplxVector" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                                        Position Vector Arrow from Origin
+                                    </label>
+                                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                        <input type="checkbox" id="cplxModulus" class="rounded bg-slate-800 border-slate-700 text-purple-500 focus:ring-0">
+                                        Modulus Circle |z|
+                                    </label>
+                                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                        <input type="checkbox" id="cplxConjugate" class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-0">
+                                        Plot Complex Conjugate z̄
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX)</label>
+                                    <input type="text" id="cplxLabel" value="z_1 = 3 + 4i" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. z_1, 3+4i" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
 
@@ -732,6 +798,10 @@
             xAxisLabel: 'x',
             yAxisLabel: 'y',
 
+            arrowPosition: 'both', // 'both', 'positive', 'none'
+            arrowStyle: 'triangle', // 'triangle', 'stealth', 'barb'
+            arrowSize: 'medium', // 'small', 'medium', 'large'
+
             subdivisions: 2,
             gridType: 'lines',
             showXAxis: true,
@@ -890,24 +960,51 @@
                 return { x, y };
             }
 
-            // Defs Arrow Marker & ClipPath
             const defs = document.createElementNS(svgNS, "defs");
+
+            // Custom Arrow Marker Builder
+            const sizeMap = { small: { w: 4, h: 4, ref: 5 }, medium: { w: 6, h: 6, ref: 6 }, large: { w: 8, h: 8, ref: 7 } };
+            const arrowDim = sizeMap[config.arrowSize] || sizeMap.medium;
+
+            let arrowPathD = "M 0 0 L 10 5 L 0 10 z"; // triangle
+            if (config.arrowStyle === 'stealth') arrowPathD = "M 0 0 L 10 5 L 0 10 L 7 5 z";
+            else if (config.arrowStyle === 'barb') arrowPathD = "M 0 0 L 10 5 L 0 10 L 3 5 z";
+
+            // End Marker (Pointing Right / Up)
+            const markerEnd = document.createElementNS(svgNS, "marker");
+            markerEnd.setAttribute("id", `arrow-end-${gridIndex}`);
+            markerEnd.setAttribute("viewBox", "0 0 10 10");
+            markerEnd.setAttribute("refX", arrowDim.ref);
+            markerEnd.setAttribute("refY", "5");
+            markerEnd.setAttribute("markerWidth", arrowDim.w);
+            markerEnd.setAttribute("markerHeight", arrowDim.h);
+            markerEnd.setAttribute("orient", "auto");
             
-            // Arrow Marker
-            const marker = document.createElementNS(svgNS, "marker");
-            marker.setAttribute("id", `arrow-${gridIndex}`);
-            marker.setAttribute("viewBox", "0 0 10 10");
-            marker.setAttribute("refX", "6");
-            marker.setAttribute("refY", "5");
-            marker.setAttribute("markerWidth", "6");
-            marker.setAttribute("markerHeight", "6");
-            marker.setAttribute("orient", "auto-start-reverse");
-            
-            const path = document.createElementNS(svgNS, "path");
-            path.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
-            path.setAttribute("fill", config.colorAxis);
-            marker.appendChild(path);
-            defs.appendChild(marker);
+            const pathEnd = document.createElementNS(svgNS, "path");
+            pathEnd.setAttribute("d", arrowPathD);
+            pathEnd.setAttribute("fill", config.colorAxis);
+            markerEnd.appendChild(pathEnd);
+            defs.appendChild(markerEnd);
+
+            // Start Marker (Pointing Left / Down)
+            const markerStart = document.createElementNS(svgNS, "marker");
+            markerStart.setAttribute("id", `arrow-start-${gridIndex}`);
+            markerStart.setAttribute("viewBox", "0 0 10 10");
+            markerStart.setAttribute("refX", 10 - arrowDim.ref);
+            markerStart.setAttribute("refY", "5");
+            markerStart.setAttribute("markerWidth", arrowDim.w);
+            markerStart.setAttribute("markerHeight", arrowDim.h);
+            markerStart.setAttribute("orient", "auto");
+
+            let arrowStartPathD = "M 10 0 L 0 5 L 10 10 z"; // reversed triangle
+            if (config.arrowStyle === 'stealth') arrowStartPathD = "M 10 0 L 0 5 L 10 10 L 3 5 z";
+            else if (config.arrowStyle === 'barb') arrowStartPathD = "M 10 0 L 0 5 L 10 10 L 7 5 z";
+
+            const pathStart = document.createElementNS(svgNS, "path");
+            pathStart.setAttribute("d", arrowStartPathD);
+            pathStart.setAttribute("fill", config.colorAxis);
+            markerStart.appendChild(pathStart);
+            defs.appendChild(markerStart);
 
             // Grid Clip Path for bounded plot curves & shading
             const clipPath = document.createElementNS(svgNS, "clipPath");
@@ -977,7 +1074,13 @@
                 const p2 = toPx(config.xMax, 0);
                 xAxis.setAttribute("x1", Math.max(offsetX, p1.x)); xAxis.setAttribute("y1", is1D ? offsetY : Math.min(Math.max(p1.y, offsetY), actualHeight - offsetY));
                 xAxis.setAttribute("x2", Math.min(width - offsetX, p2.x)); xAxis.setAttribute("y2", is1D ? offsetY : Math.min(Math.max(p2.y, offsetY), actualHeight - offsetY));
-                if (config.showArrows) xAxis.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                
+                if (config.showArrows && config.arrowPosition !== 'none') {
+                    if (config.arrowPosition === 'both') {
+                        xAxis.setAttribute("marker-start", `url(#arrow-start-${gridIndex})`);
+                    }
+                    xAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                }
                 gAxes.appendChild(xAxis);
             }
 
@@ -988,13 +1091,18 @@
                 const p2 = toPx(0, config.yMax);
                 yAxis.setAttribute("x1", Math.min(Math.max(p1.x, offsetX), width - offsetX)); yAxis.setAttribute("y1", Math.min(actualHeight - offsetY, p1.y));
                 yAxis.setAttribute("x2", Math.min(Math.max(p2.x, offsetX), width - offsetX)); yAxis.setAttribute("y2", Math.max(offsetY, p2.y));
-                if (config.showArrows) yAxis.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                
+                if (config.showArrows && config.arrowPosition !== 'none') {
+                    if (config.arrowPosition === 'both') {
+                        yAxis.setAttribute("marker-start", `url(#arrow-start-${gridIndex})`);
+                    }
+                    yAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                }
                 gAxes.appendChild(yAxis);
             }
 
             svg.appendChild(gAxes);
 
-            // Numbers & Ticks
             const gText = document.createElementNS(svgNS, "g");
             gText.setAttribute("fill", config.colorAxis);
             gText.style.fontFamily = config.labelFontFamily;
@@ -1083,6 +1191,7 @@
                     }
                 } 
                 else if (plot.type === 'inequality1d') {
+                    // Strictly exclusive to 1D Number Line mode
                     if (config.planeType !== 'numberline') return;
                     const ptA = toPx(plot.a, 0);
                     const isClosedA = plot.ineqType === 'gte' || plot.ineqType === 'lte' || plot.ineqType === 'interval';
@@ -1094,7 +1203,7 @@
                         ray.setAttribute("x2", ptMax.x); ray.setAttribute("y2", ptMax.y);
                         ray.setAttribute("stroke", plot.color);
                         ray.setAttribute("stroke-width", "4");
-                        ray.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                        ray.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
                         gPlot.appendChild(ray);
                     } else if (plot.ineqType === 'lt' || plot.ineqType === 'lte') {
                         const ptMin = toPx(config.xMin, 0);
@@ -1103,7 +1212,7 @@
                         ray.setAttribute("x2", ptMin.x); ray.setAttribute("y2", ptMin.y);
                         ray.setAttribute("stroke", plot.color);
                         ray.setAttribute("stroke-width", "4");
-                        ray.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                        ray.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
                         gPlot.appendChild(ray);
                     } else if (plot.ineqType === 'interval') {
                         const ptB = toPx(plot.b, 0);
@@ -1130,6 +1239,76 @@
                     circleA.setAttribute("stroke", plot.color);
                     circleA.setAttribute("stroke-width", "2.5");
                     gPlot.appendChild(circleA);
+                }
+                else if (plot.type === 'complex') {
+                    // Strictly exclusive to Complex Plane mode
+                    if (config.planeType !== 'complex') return;
+                    const pt = toPx(plot.re, plot.im);
+                    const p0 = toPx(0, 0);
+
+                    // Modulus Circle |z|
+                    if (plot.showModulus) {
+                        const modR = Math.hypot(plot.re, plot.im);
+                        const ptR = toPx(modR, 0);
+                        const radiusPx = Math.abs(ptR.x - p0.x);
+
+                        const modCircle = document.createElementNS(svgNS, "circle");
+                        modCircle.setAttribute("cx", p0.x); modCircle.setAttribute("cy", p0.y);
+                        modCircle.setAttribute("r", radiusPx);
+                        modCircle.setAttribute("fill", "none");
+                        modCircle.setAttribute("stroke", plot.color);
+                        modCircle.setAttribute("stroke-width", "1.5");
+                        modCircle.setAttribute("stroke-dasharray", "4,4");
+                        gPlot.appendChild(modCircle);
+                    }
+
+                    // Vector Arrow from Origin
+                    if (plot.showVector) {
+                        const vecLine = document.createElementNS(svgNS, "line");
+                        vecLine.setAttribute("x1", p0.x); vecLine.setAttribute("y1", p0.y);
+                        vecLine.setAttribute("x2", pt.x); vecLine.setAttribute("y2", pt.y);
+                        vecLine.setAttribute("stroke", plot.color);
+                        vecLine.setAttribute("stroke-width", "2.5");
+                        vecLine.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                        gPlot.appendChild(vecLine);
+                    }
+
+                    // Complex Conjugate z_bar
+                    if (plot.showConjugate) {
+                        const ptConj = toPx(plot.re, -plot.im);
+                        
+                        const conjConnector = document.createElementNS(svgNS, "line");
+                        conjConnector.setAttribute("x1", pt.x); conjConnector.setAttribute("y1", pt.y);
+                        conjConnector.setAttribute("x2", ptConj.x); conjConnector.setAttribute("y2", ptConj.y);
+                        conjConnector.setAttribute("stroke", plot.color);
+                        conjConnector.setAttribute("stroke-width", "1");
+                        conjConnector.setAttribute("stroke-dasharray", "3,3");
+                        conjConnector.setAttribute("stroke-opacity", "0.6");
+                        gPlot.appendChild(conjConnector);
+
+                        const circleConj = document.createElementNS(svgNS, "circle");
+                        circleConj.setAttribute("cx", ptConj.x); circleConj.setAttribute("cy", ptConj.y);
+                        circleConj.setAttribute("r", "4");
+                        circleConj.setAttribute("fill", config.colorBg);
+                        circleConj.setAttribute("stroke", plot.color);
+                        circleConj.setAttribute("stroke-width", "1.5");
+                        gPlot.appendChild(circleConj);
+
+                        renderLatexToSVG(gPlot, `\\bar{z}`, ptConj.x + 14, ptConj.y + 10, plot.color, 11, 'start');
+                    }
+
+                    // Main Point Circle
+                    const circle = document.createElementNS(svgNS, "circle");
+                    circle.setAttribute("cx", pt.x); circle.setAttribute("cy", pt.y);
+                    circle.setAttribute("r", "5.5");
+                    circle.setAttribute("fill", plot.color);
+                    circle.setAttribute("stroke", config.colorBg);
+                    circle.setAttribute("stroke-width", "1.5");
+                    gPlot.appendChild(circle);
+
+                    if (plot.label) {
+                        renderLatexToSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
+                    }
                 }
                 else if (plot.type === 'inequality') {
                     if (config.planeType === 'numberline') return;
@@ -1264,7 +1443,7 @@
                     line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
                     line.setAttribute("stroke", plot.color);
                     line.setAttribute("stroke-width", "2.5");
-                    line.setAttribute("marker-end", `url(#arrow-${gridIndex})`);
+                    line.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
                     gPlot.appendChild(line);
                 }
 
@@ -1295,7 +1474,6 @@
                                     const diff = y1 - y2;
 
                                     if (prevDiff !== null && ((prevDiff <= 0 && diff >= 0) || (prevDiff >= 0 && diff <= 0))) {
-                                        // Refine root via bisection
                                         let lowX = prevX;
                                         let highX = xVal;
                                         let rootX = (lowX + highX) / 2;
@@ -1361,7 +1539,6 @@
 
             svg.appendChild(gPlottedObjects);
 
-            // Interactive Click Handler
             svg.addEventListener("mousemove", (e) => {
                 const rect = svg.getBoundingClientRect();
                 const px = (e.clientX - rect.left) * (width / rect.width);
@@ -1386,20 +1563,36 @@
                     const snapX = Math.round(coords.x * 2) / 2;
                     const snapY = is1D ? 0 : Math.round(coords.y * 2) / 2;
                     
-                    let lbl = `(${snapX}, ${snapY})`;
-                    if (config.planeType === 'complex') lbl = `${snapX} + ${snapY}i`;
-                    if (is1D) lbl = `x = ${snapX}`;
+                    if (config.planeType === 'complex') {
+                        let cplxLbl = `z = ${snapX} + ${snapY}i`;
+                        if (snapY < 0) cplxLbl = `z = ${snapX} - ${Math.abs(snapY)}i`;
+                        plots.push({
+                            id: Date.now(),
+                            type: 'complex',
+                            re: snapX,
+                            im: snapY,
+                            showVector: true,
+                            showModulus: false,
+                            showConjugate: false,
+                            label: cplxLbl,
+                            color: selectedColor
+                        });
+                        showToast(`Plotted complex number ${snapX} + ${snapY}i`);
+                    } else {
+                        let lbl = `(${snapX}, ${snapY})`;
+                        if (is1D) lbl = `x = ${snapX}`;
 
-                    plots.push({
-                        id: Date.now(),
-                        type: 'point',
-                        x: snapX,
-                        y: snapY,
-                        label: lbl,
-                        color: selectedColor
-                    });
+                        plots.push({
+                            id: Date.now(),
+                            type: 'point',
+                            x: snapX,
+                            y: snapY,
+                            label: lbl,
+                            color: selectedColor
+                        });
+                        showToast(`Plotted point at ${snapX}`);
+                    }
                     render();
-                    showToast(`Plotted point at ${snapX}`);
                 }
             });
 
@@ -1451,19 +1644,36 @@
 
             const yContainer = document.getElementById('yAxisBoundsContainer');
             const yGroup = document.getElementById('yAxisTitleGroup');
+            
             const btn1D = document.getElementById('plotType-inequality1d');
+            const btnCplx = document.getElementById('plotType-complex');
+            const btnFunc = document.getElementById('plotType-function');
+            const btnIneq = document.getElementById('plotType-inequality');
+            const btnVec = document.getElementById('plotType-vector');
 
             if (type === 'numberline') {
                 yContainer.classList.add('hidden');
                 yGroup.classList.add('hidden');
+
                 if (btn1D) btn1D.classList.remove('hidden');
+                if (btnCplx) btnCplx.classList.add('hidden');
+                if (btnFunc) btnFunc.classList.add('hidden');
+                if (btnIneq) btnIneq.classList.add('hidden');
+                if (btnVec) btnVec.classList.add('hidden');
+
                 setPlotType('inequality1d');
                 config.xAxisLabel = 'x';
             } else if (type === 'complex') {
                 yContainer.classList.remove('hidden');
                 yGroup.classList.remove('hidden');
+
                 if (btn1D) btn1D.classList.add('hidden');
-                if (selectedPlotType === 'inequality1d') setPlotType('point');
+                if (btnCplx) btnCplx.classList.remove('hidden');
+                if (btnFunc) btnFunc.classList.remove('hidden');
+                if (btnIneq) btnIneq.classList.remove('hidden');
+                if (btnVec) btnVec.classList.remove('hidden');
+
+                if (selectedPlotType === 'inequality1d') setPlotType('complex');
                 config.xAxisLabel = '\\text{Re}';
                 config.yAxisLabel = '\\text{Im}';
                 document.getElementById('xAxisLabel').value = config.xAxisLabel;
@@ -1471,8 +1681,14 @@
             } else {
                 yContainer.classList.remove('hidden');
                 yGroup.classList.remove('hidden');
+
                 if (btn1D) btn1D.classList.add('hidden');
-                if (selectedPlotType === 'inequality1d') setPlotType('point');
+                if (btnCplx) btnCplx.classList.add('hidden');
+                if (btnFunc) btnFunc.classList.remove('hidden');
+                if (btnIneq) btnIneq.classList.remove('hidden');
+                if (btnVec) btnVec.classList.remove('hidden');
+
+                if (selectedPlotType === 'inequality1d' || selectedPlotType === 'complex') setPlotType('point');
                 config.xAxisLabel = 'x';
                 config.yAxisLabel = 'y';
                 document.getElementById('xAxisLabel').value = config.xAxisLabel;
@@ -1553,7 +1769,7 @@
 
         function setPlotType(type) {
             selectedPlotType = type;
-            ['point', 'function', 'inequality', 'inequality1d', 'vector'].forEach(t => {
+            ['point', 'function', 'inequality', 'inequality1d', 'complex', 'vector'].forEach(t => {
                 const btn = document.getElementById(`plotType-${t}`);
                 const inputDiv = document.getElementById(`inputs-${t}`);
                 if (btn && inputDiv) {
@@ -1566,6 +1782,8 @@
                     }
                 }
             });
+
+            if (type === 'complex') updateComplexPreview();
         }
 
         function setPlotColor(color, element = null) {
@@ -1588,6 +1806,15 @@
             else bGroup.classList.add('hidden');
         }
 
+        function updateComplexPreview() {
+            const re = parseFloat(document.getElementById('cplxRe').value) || 0;
+            const im = parseFloat(document.getElementById('cplxIm').value) || 0;
+            let expr = `z = ${re} + ${im}i`;
+            if (im < 0) expr = `z = ${re} - ${Math.abs(im)}i`;
+            document.getElementById('cplxLabel').value = expr;
+            updateLatexLivePreview(expr);
+        }
+
         function addPlotElement() {
             if (selectedPlotType === 'point') {
                 const x = parseFloat(document.getElementById('ptX').value) || 0;
@@ -1603,10 +1830,20 @@
                 const v = document.getElementById('ineqVar').value;
                 plots.push({ id: Date.now(), type: 'inequality', expr, op, var: v, color: selectedColor });
             } else if (selectedPlotType === 'inequality1d') {
+                if (config.planeType !== 'numberline') return;
                 const ineqType = document.getElementById('ineq1dType').value;
                 const a = parseFloat(document.getElementById('ineq1dA').value) || 0;
                 const b = parseFloat(document.getElementById('ineq1dB').value) || 0;
                 plots.push({ id: Date.now(), type: 'inequality1d', ineqType, a, b, color: selectedColor });
+            } else if (selectedPlotType === 'complex') {
+                if (config.planeType !== 'complex') return;
+                const re = parseFloat(document.getElementById('cplxRe').value) || 0;
+                const im = parseFloat(document.getElementById('cplxIm').value) || 0;
+                const showVector = document.getElementById('cplxVector').checked;
+                const showModulus = document.getElementById('cplxModulus').checked;
+                const showConjugate = document.getElementById('cplxConjugate').checked;
+                const label = document.getElementById('cplxLabel').value;
+                plots.push({ id: Date.now(), type: 'complex', re, im, showVector, showModulus, showConjugate, label, color: selectedColor });
             } else if (selectedPlotType === 'vector') {
                 const x1 = parseFloat(document.getElementById('vecX1').value) || 0;
                 const y1 = parseFloat(document.getElementById('vecY1').value) || 0;
@@ -1640,6 +1877,7 @@
                 if (p.ineqType === 'lte') return `x \\le ${p.a}`;
                 if (p.ineqType === 'interval') return `${p.a} < x \\le ${p.b}`;
             }
+            if (p.type === 'complex') return p.label ? p.label : `z = ${p.re} + ${p.im}i`;
             if (p.type === 'vector') return `\\vec{v} = \\langle ${p.x2 - p.x1}, ${p.y2 - p.y1} \\rangle`;
             return '';
         }
@@ -1766,6 +2004,9 @@
         function resetAll() {
             plots = [];
             config.layoutMode = 'single';
+            config.arrowPosition = 'both';
+            config.arrowStyle = 'triangle';
+            config.arrowSize = 'medium';
             applyPreset('standard');
             setTheme('classic');
             resetZoom();
