@@ -254,16 +254,16 @@
                     <!-- Axis Title Customization -->
                     <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
                         <span class="font-semibold text-xs text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                            <i class="fa-solid fa-signature"></i> Axis Title Labels (LaTeX Support)
+                            <i class="fa-solid fa-signature"></i> Axis Title Labels
                         </span>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="text-[11px] text-slate-400 block mb-1">X-Axis Title</label>
-                                <input type="text" id="xAxisLabel" value="x" oninput="updateConfig('xAxisLabel', this.value)" placeholder="e.g. x, \text{Re}, t" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                <input type="text" id="xAxisLabel" value="x" oninput="updateConfig('xAxisLabel', this.value)" placeholder="e.g. x, Re, t" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                             </div>
                             <div id="yAxisTitleGroup">
                                 <label class="text-[11px] text-slate-400 block mb-1">Y-Axis Title</label>
-                                <input type="text" id="yAxisLabel" value="y" oninput="updateConfig('yAxisLabel', this.value)" placeholder="e.g. y, \text{Im}, f(x)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                <input type="text" id="yAxisLabel" value="y" oninput="updateConfig('yAxisLabel', this.value)" placeholder="e.g. y, Im, f(x)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                             </div>
                         </div>
                     </div>
@@ -502,7 +502,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX Allowed)</label>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label</label>
                                     <input type="text" id="ptLabel" value="P_1(3, 4)" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. A, P_1, (3, 4)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
@@ -511,7 +511,7 @@
                             <div id="inputs-function" class="hidden space-y-2">
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-mono text-blue-400 font-bold">y =</span>
-                                    <input type="text" id="funcExpr" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. \frac{1}{2}x^2 - 4" value="\frac{1}{2}x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                    <input type="text" id="funcExpr" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. (1/2)x^2 - 4" value="0.5x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
 
@@ -596,7 +596,7 @@
                                     </label>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX)</label>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label</label>
                                     <input type="text" id="cplxLabel" value="z_1 = 3 + 4i" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. z_1, 3+4i" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
@@ -611,7 +611,7 @@
 
                             <!-- Live KaTeX Expression Preview Box -->
                             <div class="mt-2 p-2 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between">
-                                <span class="text-[10px] text-slate-500 font-medium">LaTeX Preview:</span>
+                                <span class="text-[10px] text-slate-500 font-medium">KaTeX Sidebar Preview:</span>
                                 <div id="latexLivePreview" class="text-sm font-serif text-blue-300"></div>
                             </div>
                         </div>
@@ -719,7 +719,6 @@
         </main>
     </div>
 
-    <!-- Export Modal Dialog -->
     <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 hidden p-4 no-print">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl text-slate-200">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -833,71 +832,56 @@
         let selectedPlotType = 'point';
         let selectedColor = '#000000';
 
-        // Helper to inline CSS styles inside generated SVG defs to ensure rasterization/export works in all sandboxes
-        function ensureSvgNamespacesAndStyles(svgEl) {
-            if (!svgEl) return;
-            if (!svgEl.getAttribute("xmlns")) svgEl.setAttribute("xmlns", svgNS);
-            if (!svgEl.getAttribute("xmlns:xlink")) svgEl.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+        // Native SVG Math Text Renderer (Replaces foreignObject to guarantee 100% working PNG rasterization)
+        function renderNativeMathSVG(parentGroup, rawText, x, y, color, fontSize = 13, anchor = 'middle') {
+            if (!rawText || rawText.trim() === '') return;
+            const textEl = document.createElementNS(svgNS, "text");
+            textEl.setAttribute("x", x);
+            textEl.setAttribute("y", y);
+            textEl.setAttribute("fill", color);
+            textEl.setAttribute("font-size", `${fontSize}px`);
+            textEl.setAttribute("text-anchor", anchor);
+            textEl.setAttribute("dominant-baseline", "central");
+            textEl.style.fontFamily = config.fontFamily;
 
-            let defs = svgEl.querySelector("defs");
-            if (!defs) {
-                defs = document.createElementNS(svgNS, "defs");
-                svgEl.insertBefore(defs, svgEl.firstChild);
+            let clean = rawText.trim()
+                .replace(/\\text\{([^}]+)\}/g, '$1')
+                .replace(/\\mathrm\{([^}]+)\}/g, '$1')
+                .replace(/\\pi/g, 'π')
+                .replace(/\\theta/g, 'θ')
+                .replace(/\\ge|\\geq|>=/g, '≥')
+                .replace(/\\le|\\leq|<=/g, '≤')
+                .replace(/\\cdot/g, '·')
+                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)');
+
+            // Check if text has math variables/subscripts/superscripts
+            if (clean.includes('^') || clean.includes('_') || /[a-zA-Z]/.test(clean)) {
+                const parts = clean.split(/(\^[0-9a-zA-Z]+|_[0-9a-zA-Z]+)/g);
+                parts.forEach(part => {
+                    if (!part) return;
+                    const tspan = document.createElementNS(svgNS, "tspan");
+                    if (part.startsWith('^')) {
+                        tspan.textContent = part.slice(1);
+                        tspan.setAttribute("dy", "-0.5em");
+                        tspan.setAttribute("font-size", "75%");
+                    } else if (part.startsWith('_')) {
+                        tspan.textContent = part.slice(1);
+                        tspan.setAttribute("dy", "0.3em");
+                        tspan.setAttribute("font-size", "75%");
+                    } else {
+                        tspan.textContent = part;
+                        if (/[xXyYzZ]/.test(part) && !part.includes('(')) {
+                            tspan.style.fontStyle = "italic";
+                            tspan.style.fontFamily = "Lora, serif";
+                        }
+                    }
+                    textEl.appendChild(tspan);
+                });
+            } else {
+                textEl.textContent = clean;
             }
 
-            let style = defs.querySelector("style#embedded-katex-styles");
-            if (!style) {
-                style = document.createElementNS(svgNS, "style");
-                style.setAttribute("id", "embedded-katex-styles");
-                style.textContent = `
-                    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;1,400&display=swap');
-                    .katex { font-family: 'Lora', 'KaTeX_Main', serif; font-size: 1em; line-height: 1.2; text-indent: 0; display: inline-block; }
-                    .katex .mathnormal { font-family: 'Lora', 'KaTeX_Math', serif; font-style: italic; }
-                    .katex .mord { font-family: 'Lora', 'KaTeX_Main', serif; }
-                    .katex .mbin, .katex .mrel { margin: 0 0.2em; }
-                    text { font-family: ${config.labelFontFamily || 'Inter, sans-serif'}; }
-                `;
-                defs.appendChild(style);
-            }
-        }
-
-        function renderLatexToSVG(parentGroup, latexStr, x, y, color, fontSize = 13, anchor = 'middle') {
-            if (!latexStr || latexStr.trim() === '') return;
-            const foreignObj = document.createElementNS(svgNS, "foreignObject");
-            const width = 160;
-            const height = 40;
-            
-            let xPos = x - width / 2;
-            if (anchor === 'start') xPos = x;
-            else if (anchor === 'end') xPos = x - width;
-
-            foreignObj.setAttribute("x", xPos);
-            foreignObj.setAttribute("y", y - height / 2);
-            foreignObj.setAttribute("width", width);
-            foreignObj.setAttribute("height", height);
-            foreignObj.style.overflow = "visible";
-            foreignObj.style.pointerEvents = "none";
-            
-            const div = document.createElement("div");
-            div.style.display = "flex";
-            div.style.alignItems = "center";
-            div.style.height = "100%";
-            div.style.justifyContent = anchor === 'end' ? 'flex-end' : anchor === 'start' ? 'flex-start' : 'center';
-            div.style.color = color;
-            div.style.fontSize = `${fontSize}px`;
-            div.style.fontFamily = config.fontFamily;
-            div.style.lineHeight = "1";
-            div.style.whiteSpace = "nowrap";
-
-            try {
-                const formatted = (latexStr.includes('\\') || latexStr.includes('^') || latexStr.includes('_') || latexStr.includes('{') || latexStr.includes('}')) ? latexStr : `\\text{${latexStr}}`;
-                div.innerHTML = katex.renderToString(formatted, { throwOnError: false });
-            } catch(e) {
-                div.textContent = latexStr;
-            }
-
-            foreignObj.appendChild(div);
-            parentGroup.appendChild(foreignObj);
+            parentGroup.appendChild(textEl);
         }
 
         function parseLatexToJS(expr) {
@@ -938,6 +922,7 @@
             const is1D = config.planeType === 'numberline';
             const actualHeight = is1D ? 180 : height;
 
+            svg.setAttribute("xmlns", svgNS);
             svg.setAttribute("width", width);
             svg.setAttribute("height", actualHeight);
             svg.setAttribute("viewBox", `0 0 ${width} ${actualHeight}`);
@@ -982,6 +967,13 @@
             }
 
             const defs = document.createElementNS(svgNS, "defs");
+
+            // Embed fonts and styling rules cleanly in defs for vector export
+            const style = document.createElementNS(svgNS, "style");
+            style.textContent = `
+                text { font-family: ${config.labelFontFamily}; }
+            `;
+            defs.appendChild(style);
 
             // Custom Arrow Markers
             const sizeMap = { small: { w: 5, h: 5, ref: 5 }, medium: { w: 7, h: 7, ref: 6 }, large: { w: 9, h: 9, ref: 7 } };
@@ -1080,7 +1072,7 @@
             gAxes.setAttribute("stroke-width", config.axisWidth);
 
             const originPx = toPx(0, 0);
-            const axisOverhang = 14; // Extension past boundary for textbook style arrows
+            const axisOverhang = 14;
 
             // X-Axis Line
             if (config.showXAxis) {
@@ -1200,12 +1192,12 @@
             if (config.xAxisLabel) {
                 const p2 = toPx(config.xMax, 0);
                 const x2 = Math.min(offsetX + plotW, p2.x) + ((config.showArrows && config.arrowPosition !== 'none') ? 22 : 12);
-                renderLatexToSVG(svg, config.xAxisLabel, x2, xAxisPxY, config.colorAxis, 14, 'start');
+                renderNativeMathSVG(svg, config.xAxisLabel, x2, xAxisPxY, config.colorAxis, 14, 'start');
             }
             if (!is1D && config.yAxisLabel) {
                 const p2 = toPx(0, config.yMax);
                 const y2 = Math.max(offsetY, p2.y) - ((config.showArrows && config.arrowPosition !== 'none') ? 22 : 12);
-                renderLatexToSVG(svg, config.yAxisLabel, yAxisPxX, y2, config.colorAxis, 14, 'middle');
+                renderNativeMathSVG(svg, config.yAxisLabel, yAxisPxX, y2, config.colorAxis, 14, 'middle');
             }
 
             const gPlottedObjects = document.createElementNS(svgNS, "g");
@@ -1229,7 +1221,7 @@
                     gPlot.appendChild(circle);
 
                     if (plot.label) {
-                        renderLatexToSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
+                        renderNativeMathSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
                     }
                 } 
                 else if (plot.type === 'inequality1d') {
@@ -1320,7 +1312,7 @@
                     gPlot.appendChild(circle);
 
                     if (plot.label) {
-                        renderLatexToSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
+                        renderNativeMathSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
                     }
                 }
                 else if (plot.type === 'inequality') {
@@ -1436,9 +1428,6 @@
                 }
             });
 
-            // Inline css definitions inside SVG element so export blob works properly
-            ensureSvgNamespacesAndStyles(svg);
-
             return svg;
         }
 
@@ -1527,8 +1516,8 @@
 
                 setPlotType('complex');
 
-                config.xAxisLabel = '\\text{Re}';
-                config.yAxisLabel = '\\text{Im}';
+                config.xAxisLabel = 'Re';
+                config.yAxisLabel = 'Im';
                 document.getElementById('xAxisLabel').value = config.xAxisLabel;
                 document.getElementById('yAxisLabel').value = config.yAxisLabel;
             } else {
@@ -1907,15 +1896,14 @@
         }
 
         function downloadSVG() {
-            const svgEl = document.querySelector('#gridGridContainer svg');
+            const wrapper = document.getElementById('svgContainerWrapper');
+            const svgEl = wrapper.querySelector('svg');
             if (!svgEl) {
                 showToast('No grid available to export');
                 return;
             }
 
             const clone = svgEl.cloneNode(true);
-            ensureSvgNamespacesAndStyles(clone);
-
             const svgData = new XMLSerializer().serializeToString(clone);
             const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
             const url = URL.createObjectURL(blob);
@@ -1932,19 +1920,17 @@
             showToast('Downloaded SVG Vector!');
         }
 
-        function renderToCanvas(callback) {
+        function renderGridToCanvas(scale, callback) {
             const wrapper = document.getElementById('svgContainerWrapper');
             const svgEl = wrapper.querySelector('svg');
             if (!svgEl) { callback(null); return; }
 
             const clone = svgEl.cloneNode(true);
-            ensureSvgNamespacesAndStyles(clone);
-
             const origWidth = parseFloat(svgEl.getAttribute("width")) || 520;
             const origHeight = parseFloat(svgEl.getAttribute("height")) || 520;
 
-            const width = origWidth * exportScale;
-            const height = origHeight * exportScale;
+            const width = origWidth * scale;
+            const height = origHeight * scale;
 
             clone.setAttribute("width", width);
             clone.setAttribute("height", height);
@@ -1963,8 +1949,7 @@
             }
 
             const img = new Image();
-            img.crossOrigin = "anonymous";
-            const encodedSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
+            const encodedSvg = "data:image/svg+xml;charset=utf-8;base64," + btoa(unescape(encodeURIComponent(svgData)));
 
             img.onload = function() {
                 ctx.drawImage(img, 0, 0, width, height);
@@ -1972,11 +1957,9 @@
             };
 
             img.onerror = function() {
-                // Fallback to Blob URL if Data URI encoding hits string limits
                 const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
                 const blobUrl = URL.createObjectURL(blob);
                 const img2 = new Image();
-                img2.crossOrigin = "anonymous";
                 img2.onload = function() {
                     ctx.drawImage(img2, 0, 0, width, height);
                     URL.revokeObjectURL(blobUrl);
@@ -1984,7 +1967,7 @@
                 };
                 img2.onerror = function() {
                     URL.revokeObjectURL(blobUrl);
-                    showToast('Failed to render PNG canvas image.');
+                    showToast('Failed to rasterize PNG image.');
                     callback(null);
                 };
                 img2.src = blobUrl;
@@ -1994,7 +1977,7 @@
         }
 
         function downloadPNG() {
-            renderToCanvas((canvas) => {
+            renderGridToCanvas(exportScale, (canvas) => {
                 if (!canvas) return;
                 try {
                     const pngUrl = canvas.toDataURL("image/png");
@@ -2014,7 +1997,7 @@
         }
 
         function copyImageToClipboard() {
-            renderToCanvas(async (canvas) => {
+            renderGridToCanvas(exportScale, (canvas) => {
                 if (!canvas) return;
 
                 canvas.toBlob(async (blob) => {
