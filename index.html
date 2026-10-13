@@ -903,7 +903,7 @@
             }
         }
 
-        function createSingleGridSVG(width = 480, height = 480, gridIndex = 0) {
+        function createSingleGridSVG(width = 520, height = 520, gridIndex = 0) {
             const svg = document.createElementNS(svgNS, "svg");
             
             const is1D = config.planeType === 'numberline';
@@ -916,9 +916,14 @@
             if (config.transparentBg) svg.classList.add('checkerboard-bg');
             svg.style.borderRadius = "8px";
 
-            const padding = 45;
-            let plotW = width - padding * 2;
-            let plotH = actualHeight - padding * 2;
+            // Padding configured to give clean margins for multi-digit labels (e.g. 1000)
+            const paddingLeft = 65;
+            const paddingRight = 45;
+            const paddingTop = 45;
+            const paddingBottom = 55;
+
+            let plotW = width - paddingLeft - paddingRight;
+            let plotH = actualHeight - paddingTop - paddingBottom;
 
             const xRange = Math.max(0.00001, config.xMax - config.xMin);
             const yRange = is1D ? 1 : Math.max(0.00001, config.yMax - config.yMin);
@@ -932,18 +937,18 @@
                 plotH = boxSize * numBoxesY;
             }
 
-            const offsetX = padding + (width - padding * 2 - plotW) / 2;
-            const offsetY = is1D ? actualHeight / 2 : padding + (actualHeight - padding * 2 - plotH) / 2;
+            const offsetX = paddingLeft + (width - paddingLeft - paddingRight - plotW) / 2;
+            const offsetY = is1D ? actualHeight / 2 : paddingTop + (actualHeight - paddingTop - paddingBottom - plotH) / 2;
 
             function toPx(x, y = 0) {
                 const px = offsetX + ((x - config.xMin) / xRange) * plotW;
-                const py = is1D ? offsetY : (actualHeight - offsetY - ((y - config.yMin) / yRange) * plotH);
+                const py = is1D ? offsetY : (actualHeight - paddingBottom - ((y - config.yMin) / yRange) * plotH);
                 return { x: px, y: py };
             }
 
             function toMath(px, py) {
                 const x = config.xMin + ((px - offsetX) / plotW) * xRange;
-                const y = is1D ? 0 : config.yMin + ((actualHeight - py - offsetY) / plotH) * yRange;
+                const y = is1D ? 0 : config.yMin + ((actualHeight - py - paddingBottom) / plotH) * yRange;
                 return { x, y };
             }
 
@@ -1056,9 +1061,9 @@
                 const xAxis = document.createElementNS(svgNS, "line");
                 const p1 = toPx(config.xMin, 0);
                 const p2 = toPx(config.xMax, 0);
-                const clampedY = is1D ? offsetY : Math.min(Math.max(p1.y, offsetY), actualHeight - offsetY);
+                const clampedY = is1D ? offsetY : Math.min(Math.max(p1.y, offsetY), actualHeight - paddingBottom);
                 xAxis.setAttribute("x1", Math.max(offsetX, p1.x)); xAxis.setAttribute("y1", clampedY);
-                xAxis.setAttribute("x2", Math.min(width - offsetX, p2.x)); xAxis.setAttribute("y2", clampedY);
+                xAxis.setAttribute("x2", Math.min(width - paddingRight, p2.x)); xAxis.setAttribute("y2", clampedY);
                 
                 if (config.showArrows && config.arrowPosition !== 'none') {
                     if (config.arrowPosition === 'both') {
@@ -1074,8 +1079,8 @@
                 const yAxis = document.createElementNS(svgNS, "line");
                 const p1 = toPx(0, config.yMin);
                 const p2 = toPx(0, config.yMax);
-                const clampedX = Math.min(Math.max(p1.x, offsetX), width - offsetX);
-                yAxis.setAttribute("x1", clampedX); yAxis.setAttribute("y1", Math.min(actualHeight - offsetY, p1.y));
+                const clampedX = Math.min(Math.max(p1.x, offsetX), width - paddingRight);
+                yAxis.setAttribute("x1", clampedX); yAxis.setAttribute("y1", Math.min(actualHeight - paddingBottom, p1.y));
                 yAxis.setAttribute("x2", clampedX); yAxis.setAttribute("y2", Math.max(offsetY, p2.y));
                 
                 if (config.showArrows && config.arrowPosition !== 'none') {
@@ -1094,15 +1099,14 @@
             gText.style.fontFamily = config.labelFontFamily;
             gText.style.fontSize = `${config.fontSize}px`;
 
-            const xAxisPxY = is1D ? offsetY : Math.min(Math.max(originPx.y, offsetY), actualHeight - offsetY);
-            const yAxisPxX = Math.min(Math.max(originPx.x, offsetX), width - offsetX);
+            const xAxisPxY = is1D ? offsetY : Math.min(Math.max(originPx.y, offsetY), actualHeight - paddingBottom);
+            const yAxisPxX = Math.min(Math.max(originPx.x, offsetX), width - paddingRight);
 
             if (config.showXNumbers && config.showXAxis) {
                 for (let x = config.xMin; x <= config.xMax + 1e-7; x += config.xLabelStep) {
                     const cleanX = Number(x.toFixed(6));
-                    if (Math.abs(cleanX) < 1e-7 && !config.showOrigin && config.showYAxis) continue;
                     const pt = toPx(cleanX, 0);
-                    if (pt.x < offsetX - 1 || pt.x > width - offsetX + 1) continue;
+                    if (pt.x < offsetX - 1 || pt.x > width - paddingRight + 1) continue;
 
                     const tick = document.createElementNS(svgNS, "line");
                     tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisPxY - 4);
@@ -1113,7 +1117,7 @@
 
                     const txt = document.createElementNS(svgNS, "text");
                     txt.setAttribute("x", pt.x);
-                    txt.setAttribute("y", xAxisPxY + 18);
+                    txt.setAttribute("y", Math.min(actualHeight - 12, xAxisPxY + 18));
                     txt.setAttribute("text-anchor", "middle");
                     txt.textContent = cleanX;
                     gText.appendChild(txt);
@@ -1123,9 +1127,9 @@
             if (!is1D && config.showYNumbers && config.showYAxis) {
                 for (let y = config.yMin; y <= config.yMax + 1e-7; y += config.yLabelStep) {
                     const cleanY = Number(y.toFixed(6));
-                    if (Math.abs(cleanY) < 1e-7) continue;
+                    if (Math.abs(cleanY) < 1e-7 && config.showXNumbers && config.xMin <= 0 && config.xMax >= 0) continue;
                     const pt = toPx(0, cleanY);
-                    if (pt.y < offsetY - 1 || pt.y > actualHeight - offsetY + 1) continue;
+                    if (pt.y < offsetY - 1 || pt.y > actualHeight - paddingBottom + 1) continue;
 
                     const tick = document.createElementNS(svgNS, "line");
                     tick.setAttribute("x1", yAxisPxX - 4); tick.setAttribute("y1", pt.y);
@@ -1135,7 +1139,7 @@
                     svg.appendChild(tick);
 
                     const txt = document.createElementNS(svgNS, "text");
-                    txt.setAttribute("x", yAxisPxX - 8);
+                    txt.setAttribute("x", Math.max(48, yAxisPxX - 8));
                     txt.setAttribute("y", pt.y + 4);
                     txt.setAttribute("text-anchor", "end");
                     
@@ -1152,7 +1156,7 @@
 
             // Axis Titles
             if (config.xAxisLabel) {
-                renderLatexToSVG(svg, config.xAxisLabel, width - offsetX + 22, xAxisPxY, config.colorAxis, 14, 'start');
+                renderLatexToSVG(svg, config.xAxisLabel, width - paddingRight + 22, xAxisPxY, config.colorAxis, 14, 'start');
             }
             if (!is1D && config.yAxisLabel) {
                 renderLatexToSVG(svg, config.yAxisLabel, yAxisPxX, offsetY - 22, config.colorAxis, 14, 'middle');
@@ -1369,6 +1373,7 @@
 
             svg.appendChild(gPlottedObjects);
 
+            // Hover coordinate tracker
             svg.addEventListener("mousemove", (e) => {
                 const rect = svg.getBoundingClientRect();
                 const px = (e.clientX - rect.left) * (width / rect.width);
@@ -1400,9 +1405,9 @@
             const dimsText = config.planeType === 'numberline' ? `${Math.abs(config.xMax - config.xMin)} Unit Line` : `${Math.abs(config.xMax - config.xMin)}x${Math.abs(config.yMax - config.yMin)} Grid`;
             document.getElementById("gridDimensionsText").innerText = dimsText;
 
-            let size = 480;
-            if (count === 2) size = 400;
-            if (count >= 4) size = 320;
+            let size = 520;
+            if (count === 2) size = 420;
+            if (count >= 4) size = 340;
 
             for (let i = 0; i < count; i++) {
                 const box = document.createElement("div");
