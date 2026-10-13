@@ -1,833 +1,1969 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GridCraft - Coordinate Grid Generator</title>
-    <!-- Tailwind CSS -->
+    <title>GridCraft - Coordinate Grid & Math Worksheet Generator</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- KaTeX CSS & JS for LaTeX Rendering -->
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts & KaTeX Math Styles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'monospace'],
+                        hand: ['Caveat', 'cursive'],
+                        katex: ['KaTeX_Main', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&family=Caveat:wght@600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 1);
+        }
         
-        body { font-family: 'Inter', sans-serif; }
-        .font-mono-code { font-family: 'Fira Code', monospace; }
-        .font-cursive { font-family: 'Caveat', cursive; }
-        .font-serif-math { font-family: 'Lora', serif; }
-
-        /* Checkerboard background for transparent mode preview */
+        svg text {
+            user-select: none;
+        }
+        
         .checkerboard-bg {
-            background-color: #ffffff;
-            background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%), 
-                              linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), 
-                              linear-gradient(45deg, transparent 75%, #e5e7eb 75%), 
-                              linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #0f172a;
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+                              linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 24px 24px;
+            background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
         }
 
-        /* Custom scrollbar for control sidebar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        /* Direct Print Stylesheet */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                overflow: visible !important;
+            }
+            header, aside, .no-print, #interactiveStatus, .workspace-bar {
+                display: none !important;
+            }
+            main {
+                background: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+            #previewViewport {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #svgContainerWrapper {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+            .grid-svg-item {
+                page-break-inside: avoid;
+            }
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+<body class="h-full flex flex-col font-sans overflow-hidden select-none">
 
-    <!-- Header / Navbar -->
-    <header class="bg-slate-900/80 border-b border-slate-800 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 p-2 rounded-lg text-white font-bold flex items-center justify-center shadow-lg shadow-blue-500/30">
-                    <i data-lucide="grid" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-none tracking-wide text-white">GridCraft</h1>
-                    <p class="text-xs text-slate-400">High-Precision Coordinate Plane Generator</p>
-                </div>
+    <header class="h-14 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-4 z-20 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 font-bold text-lg">
+                <i class="fa-solid fa-border-top-left font-mono"></i>
             </div>
-            
-            <div class="flex items-center space-x-3">
-                <button id="copyImageBtn" onclick="copyCanvasToClipboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center space-x-2">
-                    <i data-lucide="copy" class="w-4 h-4"></i>
-                    <span>Copy Image</span>
-                </button>
-                <button onclick="downloadPNG()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-lg shadow-blue-600/30 flex items-center space-x-2">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    <span>Export PNG</span>
-                </button>
+            <div>
+                <h1 class="font-bold text-base tracking-tight text-white flex items-center gap-2">
+                    GridCraft <span class="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">Math Studio</span>
+                </h1>
             </div>
+        </div>
+
+        <!-- Mode Selector Switch -->
+        <div class="hidden md:flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 text-xs">
+            <button id="modeSingleBtn" onclick="setLayoutMode('single')" class="px-3 py-1.5 rounded-md font-medium transition-all bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-square"></i> Single Focus Grid
+            </button>
+            <button id="modeWorksheetBtn" onclick="setLayoutMode('worksheet')" class="px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-file-lines"></i> Multi-Grid Sheet
+            </button>
+        </div>
+
+        <!-- Action Header Controls -->
+        <div class="flex items-center space-x-2">
+            <button onclick="resetAll()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+            <div class="h-4 w-px bg-slate-800"></div>
+            <button onclick="openExportModal()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs rounded-lg shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> Export & Print
+            </button>
         </div>
     </header>
 
-    <!-- Main Workspace Layout -->
-    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        
-        <!-- Controls Sidebar -->
-        <aside class="w-full md:w-[420px] bg-slate-900 border-r border-slate-800 flex flex-col h-full overflow-y-auto">
-            
-            <!-- Navigation Tabs -->
-            <div class="flex border-b border-slate-800 bg-slate-950/50 sticky top-0 z-10">
-                <button onclick="switchTab('grid')" id="tab-grid" class="flex-1 py-3 text-xs font-semibold uppercase tracking-wider text-blue-400 border-b-2 border-blue-500 transition">Grid Setup</button>
-                <button onclick="switchTab('objects')" id="tab-objects" class="flex-1 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition">Objects</button>
-                <button onclick="switchTab('style')" id="tab-style" class="flex-1 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition">Style</button>
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <aside class="w-80 md:w-96 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 z-10">
+            <!-- Sidebar Navigation Tabs -->
+            <div class="flex border-b border-slate-800 text-xs font-medium text-slate-400 bg-slate-950">
+                <button onclick="switchTab('grid')" id="tab-grid" class="flex-1 py-3 px-2 border-b-2 border-blue-500 text-blue-400 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-border-all"></i> Grid Setup
+                </button>
+                <button onclick="switchTab('style')" id="tab-style" class="flex-1 py-3 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-palette"></i> Style
+                </button>
+                <button onclick="switchTab('plots')" id="tab-plots" class="flex-1 py-3 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-draw-polygon"></i> Objects
+                </button>
+                <button onclick="switchTab('sheet')" id="tab-sheet" class="flex-1 py-3 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-file-invoice"></i> Page Layout
+                </button>
             </div>
 
-            <!-- TAB 1: GRID SETUP -->
-            <div id="panel-grid" class="p-5 space-y-6">
-                
-                <!-- System Selection -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Plane System Mode</label>
-                    <div class="grid grid-cols-3 gap-2 p-1 bg-slate-950 rounded-lg border border-slate-800">
-                        <button onclick="setSystemMode('2d')" id="btn-mode-2d" class="py-1.5 px-2 rounded text-xs font-medium bg-blue-600 text-white transition">Cartesian (2D)</button>
-                        <button onclick="setSystemMode('complex')" id="btn-mode-complex" class="py-1.5 px-2 rounded text-xs font-medium text-slate-400 hover:text-white transition">Complex ($\mathbb{C}$)</button>
-                        <button onclick="setSystemMode('1d')" id="btn-mode-1d" class="py-1.5 px-2 rounded text-xs font-medium text-slate-400 hover:text-white transition">1D Line</button>
-                    </div>
-                </div>
+            <!-- Sidebar Scrollable Container -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-6 text-sm text-slate-300">
 
-                <!-- Presets -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Quick Presets</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="applyPreset('standard')" class="p-2.5 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-left transition">
-                            <div class="text-xs font-semibold text-slate-200">Standard 4-Quad</div>
-                            <div class="text-[10px] text-slate-400">-10 to 10 (Step 1)</div>
-                        </button>
-                        <button onclick="applyPreset('quadrant1')" class="p-2.5 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-left transition">
-                            <div class="text-xs font-semibold text-slate-200">Quadrant I</div>
-                            <div class="text-[10px] text-slate-400">0 to 20 (Step 2)</div>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- X Axis Controls -->
-                <div class="space-y-3 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
-                    <div class="flex items-center justify-between">
-                        <span id="x-axis-label-heading" class="text-xs font-bold text-blue-400 tracking-wider">X-AXIS LIMITS & LABELS</span>
-                        <label class="flex items-center space-x-1.5 cursor-pointer">
-                            <input type="checkbox" id="squareBoxes" onchange="render()" class="w-3.5 h-3.5 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
-                            <span class="text-[11px] text-slate-400">Square Boxes</span>
+                <div id="content-grid" class="space-y-5">
+                    
+                    <!-- Plane System Type Selector -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-blue-500/30 space-y-2">
+                        <label class="block text-xs font-semibold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-compass"></i> Plane System Mode
                         </label>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">X Min</label>
-                            <input type="number" id="xMin" value="0" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">X Max</label>
-                            <input type="number" id="xMax" value="20" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Grid Step</label>
-                            <input type="number" id="xStep" value="2" step="any" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Label Step</label>
-                            <input type="number" id="xLabelStep" value="2" step="any" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                        <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800">
+                            <button onclick="setPlaneType('cartesian')" id="planeType-cartesian" class="py-1.5 rounded bg-blue-600 text-white text-center transition-all">Cartesian (2D)</button>
+                            <button onclick="setPlaneType('complex')" id="planeType-complex" class="py-1.5 rounded text-slate-400 hover:text-white text-center transition-all">Complex (ℂ)</button>
+                            <button onclick="setPlaneType('numberline')" id="planeType-numberline" class="py-1.5 rounded text-slate-400 hover:text-white text-center transition-all">1D Line</button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Y Axis Controls -->
-                <div id="y-axis-container" class="space-y-3 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
-                    <span id="y-axis-label-heading" class="text-xs font-bold text-blue-400 tracking-wider">Y-AXIS LIMITS & LABELS</span>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Y Min</label>
-                            <input type="number" id="yMin" value="0" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Y Max</label>
-                            <input type="number" id="yMax" value="1000" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Grid Step</label>
-                            <input type="number" id="yStep" value="100" step="any" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Label Step</label>
-                            <input type="number" id="yLabelStep" value="100" step="any" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Axis Custom Titles -->
-                <div class="space-y-3 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
-                    <span class="text-xs font-bold text-amber-400 tracking-wider flex items-center space-x-1.5">
-                        <i data-lucide="type" class="w-3.5 h-3.5"></i>
-                        <span>AXIS TITLE LABELS (LATEX SUPPORT)</span>
-                    </span>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label id="title-x-label" class="block text-[11px] text-slate-400 mb-1">X-Axis Title</label>
-                            <input type="text" id="titleX" value="x" oninput="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div id="title-y-container">
-                            <label id="title-y-label" class="block text-[11px] text-slate-400 mb-1">Y-Axis Title</label>
-                            <input type="text" id="titleY" value="y" oninput="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Arrowhead Customization -->
-                <div class="space-y-3 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
-                    <span class="text-xs font-bold text-teal-400 tracking-wider flex items-center space-x-1.5">
-                        <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
-                        <span>AXIS ARROW CUSTOMIZATION</span>
-                    </span>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Arrow Ends</label>
-                            <select id="arrowEnds" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none">
-                                <option value="both">Both Ends</option>
-                                <option value="positive">Positive Only</option>
-                                <option value="none">No Arrows</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Arrow Style</label>
-                            <select id="arrowStyle" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none">
-                                <option value="triangle">Triangle</option>
-                                <option value="stealth">Stealth</option>
-                                <option value="barb">Slim Barb</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Arrow Size</label>
-                            <select id="arrowSize" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none">
-                                <option value="small">Small</option>
-                                <option value="medium" selected>Medium</option>
-                                <option value="large">Large</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Intersections Toggle -->
-                <div id="intersections-container" class="flex items-center justify-between bg-slate-950/40 p-3.5 rounded-xl border border-slate-800">
+                    <!-- Preset Selection -->
                     <div>
-                        <div class="text-xs font-semibold text-slate-200">Show System Intersections</div>
-                        <div class="text-[10px] text-slate-400">Highlight calculated intersection points $(x, y)$</div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Quick Range Presets</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="applyPreset('standard')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                                <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
+                                    <i class="fa-solid fa-table-cells text-blue-400"></i> Standard 4-Quad
+                                </div>
+                                <span class="text-[10px] text-slate-500">-10 to 10 (Step 1)</span>
+                            </button>
+                            <button onclick="applyPreset('q1')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                                <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
+                                    <i class="fa-solid fa-chart-line text-indigo-400"></i> Quadrant I
+                                </div>
+                                <span class="text-[10px] text-slate-500">0 to 20 (Step 2/100)</span>
+                            </button>
+                            <button onclick="applyPreset('complex')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                                <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
+                                    <i class="fa-solid fa-atom text-purple-400"></i> Complex Plane
+                                </div>
+                                <span class="text-[10px] text-slate-500">Re vs Im Axis</span>
+                            </button>
+                            <button onclick="applyPreset('numberline')" class="p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left text-xs transition-all">
+                                <div class="font-semibold text-slate-200 flex items-center gap-1.5 mb-0.5">
+                                    <i class="fa-solid fa-ruler-horizontal text-emerald-400"></i> 1D Number Line
+                                </div>
+                                <span class="text-[10px] text-slate-500">Algebra Inequalities</span>
+                            </button>
+                        </div>
                     </div>
-                    <input type="checkbox" id="showIntersections" onchange="render()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
-                </div>
 
-            </div>
-
-            <!-- TAB 2: OBJECTS & PLOTS -->
-            <div id="panel-objects" class="p-5 space-y-6 hidden">
-                
-                <!-- Object Type Selector -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Add New Object</label>
-                    <div class="grid grid-cols-2 gap-2" id="object-type-buttons">
-                        <!-- Populated dynamically based on Plane Mode -->
-                    </div>
-                </div>
-
-                <!-- Object Add Form -->
-                <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-800 space-y-3">
-                    <div id="object-form-fields">
-                        <!-- Form fields loaded dynamically -->
-                    </div>
-
-                    <!-- Color Swatches with Black Included -->
-                    <div>
-                        <label class="block text-[11px] text-slate-400 mb-1.5">Color</label>
-                        <div class="flex items-center space-x-2">
-                            <div class="flex items-center space-x-1.5 flex-1" id="color-swatches">
-                                <button onclick="selectObjectColor('#000000')" class="w-6 h-6 rounded-full bg-black border border-slate-600 ring-2 ring-blue-500 scale-110" data-color="#000000"></button>
-                                <button onclick="selectObjectColor('#2563eb')" class="w-6 h-6 rounded-full bg-blue-600 border border-slate-600" data-color="#2563eb"></button>
-                                <button onclick="selectObjectColor('#dc2626')" class="w-6 h-6 rounded-full bg-red-600 border border-slate-600" data-color="#dc2626"></button>
-                                <button onclick="selectObjectColor('#16a34a')" class="w-6 h-6 rounded-full bg-green-600 border border-slate-600" data-color="#16a34a"></button>
-                                <button onclick="selectObjectColor('#9333ea')" class="w-6 h-6 rounded-full bg-purple-600 border border-slate-600" data-color="#9333ea"></button>
+                    <!-- X-Axis Bounds -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-xs text-blue-400 uppercase tracking-wider flex items-center gap-1.5" id="xAxisBoundsTitle">
+                                <i class="fa-solid fa-arrows-left-right"></i> X-Axis Limits & Labels
+                            </span>
+                            <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer" title="Keep individual grid boxes square without changing axis limits">
+                                <input type="checkbox" id="keepSquareCells" onchange="updateConfig('keepSquareCells', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                                Square Boxes
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">X Min</label>
+                                <input type="number" id="xMin" value="-10" step="any" oninput="updateGridFromInput()" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
                             </div>
-                            <input type="color" id="customObjectColor" value="#000000" onchange="selectObjectColor(this.value)" class="w-7 h-7 rounded border-0 bg-transparent cursor-pointer">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">X Max</label>
+                                <input type="number" id="xMax" value="10" step="any" oninput="updateGridFromInput()" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1" title="Grid Line Spacing">Grid Step</label>
+                                <input type="number" id="xStep" value="1" min="0.0001" step="any" oninput="updateGridFromInput()" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-blue-400 block mb-1" title="Number frequency without changing scale">Label Step</label>
+                                <input type="number" id="xLabelStep" value="2" min="0.0001" step="any" oninput="updateGridFromInput()" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-blue-900/60 rounded px-2 py-1 text-xs text-blue-200 focus:border-blue-500 outline-none">
+                            </div>
                         </div>
                     </div>
 
-                    <button onclick="addObject()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2 rounded-lg transition flex items-center justify-center space-x-1.5 shadow-lg shadow-blue-600/30">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span>Add to Canvas</span>
-                    </button>
-                </div>
+                    <!-- Y-Axis Bounds -->
+                    <div id="yAxisBoundsContainer" class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-indigo-400 uppercase tracking-wider flex items-center gap-1.5" id="yAxisBoundsTitle">
+                            <i class="fa-solid fa-arrows-up-down"></i> Y-Axis Limits & Labels
+                        </span>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y Min</label>
+                                <input type="number" id="yMin" value="-10" step="any" oninput="updateGridFromInput()" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Y Max</label>
+                                <input type="number" id="yMax" value="10" step="any" oninput="updateGridFromInput()" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1" title="Grid Line Spacing">Grid Step</label>
+                                <input type="number" id="yStep" value="1" min="0.0001" step="any" oninput="updateGridFromInput()" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-indigo-400 block mb-1" title="Number frequency without changing scale">Label Step</label>
+                                <input type="number" id="yLabelStep" value="2" min="0.0001" step="any" oninput="updateGridFromInput()" onchange="updateGridFromInput()" class="w-full bg-slate-950 border border-indigo-900/60 rounded px-2 py-1 text-xs text-indigo-200 focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
 
-                <!-- Active Plot List -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Active Objects</label>
-                    <div id="active-objects-list" class="space-y-2">
-                        <div class="text-xs text-slate-500 italic p-3 text-center border border-dashed border-slate-800 rounded-lg">No objects added to grid yet.</div>
+                    <!-- Axis Title Customization -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-signature"></i> Axis Title Labels (LaTeX Support)
+                        </span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">X-Axis Title</label>
+                                <input type="text" id="xAxisLabel" value="x" oninput="updateConfig('xAxisLabel', this.value)" placeholder="e.g. x, \text{Re}, t" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                            </div>
+                            <div id="yAxisTitleGroup">
+                                <label class="text-[11px] text-slate-400 block mb-1">Y-Axis Title</label>
+                                <input type="text" id="yAxisLabel" value="y" oninput="updateConfig('yAxisLabel', this.value)" placeholder="e.g. y, \text{Im}, f(x)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Axis Arrow Customization Panel -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <span class="font-semibold text-xs text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-arrow"></i> Axis Arrow Customization
+                        </span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Arrow Ends</label>
+                                <select id="arrowPosition" onchange="updateConfig('arrowPosition', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                                    <option value="both">Both Ends (← →)</option>
+                                    <option value="positive">Positive Only (→)</option>
+                                    <option value="none" selected>No Arrows</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Arrow Style</label>
+                                <select id="arrowStyle" onchange="updateConfig('arrowStyle', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                                    <option value="triangle" selected>Triangle</option>
+                                    <option value="stealth">Stealth Sharp</option>
+                                    <option value="barb">Slim Barb</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Arrow Size</label>
+                                <select id="arrowSize" onchange="updateConfig('arrowSize', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white focus:border-blue-500 outline-none">
+                                    <option value="small">Small</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="large">Large</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Intersections Toggle -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                        <label class="flex items-center justify-between text-xs font-semibold text-amber-300 cursor-pointer">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-dot text-amber-400"></i> Show System Intersections
+                            </span>
+                            <input type="checkbox" id="showIntersections" onchange="updateConfig('showIntersections', this.checked)" class="rounded bg-slate-800 border-slate-700 text-amber-500 focus:ring-0">
+                        </label>
+                        <p class="text-[10px] text-slate-500 mt-1">Automatically calculates and plots intersection points $(x, y)$ between graphed lines and functions.</p>
+                    </div>
+
+                    <!-- Subdivisions & Pattern -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Subdivisions & Grid Pattern</label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                                <label class="text-[11px] text-slate-400 block mb-1">Subdivisions / Step</label>
+                                <select id="subdivisions" onchange="updateConfig('subdivisions', parseInt(this.value))" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-white focus:border-blue-500 outline-none">
+                                    <option value="1" selected>None (1x)</option>
+                                    <option value="2">2 (Halves)</option>
+                                    <option value="5">5 (Fifths)</option>
+                                    <option value="10">10 (Tenths)</option>
+                                </select>
+                            </div>
+                            <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                                <label class="text-[11px] text-slate-400 block mb-1">Grid Style</label>
+                                <select id="gridType" onchange="updateConfig('gridType', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-white focus:border-blue-500 outline-none">
+                                    <option value="lines" selected>Solid Grid Lines</option>
+                                    <option value="dashed">Dashed Lines</option>
+                                    <option value="dots">Dot Grid Matrix</option>
+                                    <option value="none">Axes Only</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visibility Toggles -->
+                    <div class="space-y-2 pt-2 border-t border-slate-800">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Axes & Labels Visibility</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showXAxis" checked onchange="updateConfig('showXAxis', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Show X-Axis
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showYAxis" checked onchange="updateConfig('showYAxis', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Show Y-Axis
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showXNumbers" checked onchange="updateConfig('showXNumbers', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                X Numbers
+                            </label>
+                            <label class="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer text-xs">
+                                <input type="checkbox" id="showYNumbers" checked onchange="updateConfig('showYNumbers', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                                Y Numbers
+                            </label>
+                        </div>
                     </div>
                 </div>
 
-            </div>
-
-            <!-- TAB 3: STYLE & APPEARANCE -->
-            <div id="panel-style" class="p-5 space-y-6 hidden">
-                
-                <!-- Transparent Canvas Toggle -->
-                <div class="flex items-center justify-between bg-slate-950/40 p-3.5 rounded-xl border border-slate-800">
+                <div id="content-style" class="hidden space-y-5">
+                    <!-- Themes -->
                     <div>
-                        <div class="text-xs font-semibold text-slate-200">Transparent Background</div>
-                        <div class="text-[10px] text-slate-400">Export clean grid with no white fill</div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Preset Themes</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setTheme('classic')" class="p-2.5 rounded-lg border border-slate-800 bg-white text-slate-900 hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>Academic Minimal</span>
+                                    <span class="w-3 h-3 rounded-full bg-slate-900 inline-block border border-slate-300"></span>
+                                </div>
+                                <span class="text-[10px] text-slate-500">High contrast for printing</span>
+                            </button>
+                            <button onclick="setTheme('slate')" class="p-2.5 rounded-lg border border-slate-800 bg-slate-900 text-white hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>Modern Dark</span>
+                                    <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">Crisp dark screen style</span>
+                            </button>
+                            <button onclick="setTheme('blueprint')" class="p-2.5 rounded-lg border border-slate-800 bg-blue-900 text-blue-100 hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>Blueprint</span>
+                                    <span class="w-3 h-3 rounded-full bg-cyan-400 inline-block"></span>
+                                </div>
+                                <span class="text-[10px] text-blue-300">Technical white on blue</span>
+                            </button>
+                            <button onclick="setTheme('chalk')" class="p-2.5 rounded-lg border border-slate-800 bg-emerald-950 text-emerald-100 hover:ring-2 ring-blue-500 text-left text-xs font-medium transition-all">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>Chalkboard</span>
+                                    <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
+                                </div>
+                                <span class="text-[10px] text-emerald-300">Classroom board style</span>
+                            </button>
+                        </div>
                     </div>
-                    <input type="checkbox" id="transparentBg" onchange="render()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+
+                    <!-- Custom Colors & Transparency -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Canvas Background & Colors</span>
+                            <label class="flex items-center gap-1.5 text-xs text-blue-400 cursor-pointer">
+                                <input type="checkbox" id="transparentBg" onchange="updateConfig('transparentBg', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                                Transparent BG
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Background</label>
+                                <input type="color" id="colorBg" value="#ffffff" onchange="updateConfig('colorBg', this.value)" class="w-full h-8 bg-slate-950 rounded cursor-pointer border border-slate-800 p-0.5">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Axes Color</label>
+                                <input type="color" id="colorAxis" value="#0f172a" onchange="updateConfig('colorAxis', this.value)" class="w-full h-8 bg-slate-950 rounded cursor-pointer border border-slate-800 p-0.5">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Major Grid Lines</label>
+                                <input type="color" id="colorGrid" value="#cbd5e1" onchange="updateConfig('colorGrid', this.value)" class="w-full h-8 bg-slate-950 rounded cursor-pointer border border-slate-800 p-0.5">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Minor Sub-grid</label>
+                                <input type="color" id="colorMinor" value="#f1f5f9" onchange="updateConfig('colorMinor', this.value)" class="w-full h-8 bg-slate-950 rounded cursor-pointer border border-slate-800 p-0.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Typography Options -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Typography Settings</label>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">General Font Family</label>
+                                <select id="fontFamily" onchange="updateConfig('fontFamily', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white focus:border-blue-500 outline-none">
+                                    <option value="Inter, sans-serif">Sans-Serif Clean (Inter)</option>
+                                    <option value="Lora, serif">Math Serif (Lora)</option>
+                                    <option value="'Fira Code', monospace">Technical Monospace</option>
+                                    <option value="'Caveat', cursive">Handwritten Student</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-blue-400 block mb-1">Axis Number Label Font</label>
+                                <select id="labelFontFamily" onchange="updateConfig('labelFontFamily', this.value)" class="w-full bg-slate-950 border border-blue-900/60 rounded px-2 py-1.5 text-xs text-blue-200 focus:border-blue-500 outline-none">
+                                    <option value="Inter, sans-serif">Sans-Serif Clean</option>
+                                    <option value="Lora, serif">Math Serif / LaTeX Style</option>
+                                    <option value="'Fira Code', monospace">Monospace Digits</option>
+                                    <option value="'Caveat', cursive">Handwritten Digits</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Dedicated Label Font Selector -->
-                <div class="space-y-2 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
-                    <label class="block text-xs font-bold text-indigo-400 tracking-wider uppercase">Number Label Font</label>
-                    <select id="numberFont" onchange="render()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
-                        <option value="sans">Clean Sans-Serif (Inter)</option>
-                        <option value="serif">Computer Modern Math (Serif)</option>
-                        <option value="mono">Monospace (Fira Code)</option>
-                        <option value="cursive">Handwritten (Caveat)</option>
-                    </select>
+                <div id="content-plots" class="hidden space-y-5">
+                    <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Plot New Element</label>
+                        
+                        <!-- Element Type Selector Bar -->
+                        <div class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-lg text-xs font-medium border border-slate-800" id="plotTypeBar">
+                            <button onclick="setPlotType('point')" id="plotType-point" class="py-1 rounded bg-blue-600 text-white text-center transition-all">Point</button>
+                            <button onclick="setPlotType('function')" id="plotType-function" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Function</button>
+                            <button onclick="setPlotType('inequality')" id="plotType-inequality" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Inequality</button>
+                            <button onclick="setPlotType('inequality1d')" id="plotType-inequality1d" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all hidden">1D Line</button>
+                            <button onclick="setPlotType('complex')" id="plotType-complex" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all hidden">Complex</button>
+                            <button onclick="setPlotType('vector')" id="plotType-vector" class="py-1 rounded text-slate-400 hover:text-white text-center transition-all">Vector</button>
+                        </div>
+
+                        <!-- Object Color Selector -->
+                        <div class="space-y-1.5 pt-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-slate-300 font-medium">Object Color</span>
+                                <span id="colorNameDisplay" class="text-[10px] text-slate-400 font-mono">Black (#000000)</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 flex-wrap bg-slate-950 p-2 rounded-lg border border-slate-800" id="colorPaletteContainer">
+                                <button type="button" onclick="setPlotColor('#000000', this)" title="Black (Print Standard)" class="color-swatch-btn w-6 h-6 rounded-full bg-black border border-slate-600 hover:scale-110 transition-all ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-110"></button>
+                                <button type="button" onclick="setPlotColor('#334155', this)" title="Charcoal" class="color-swatch-btn w-6 h-6 rounded-full bg-slate-700 hover:scale-110 transition-all"></button>
+                                <button type="button" onclick="setPlotColor('#2563eb', this)" title="Royal Blue" class="color-swatch-btn w-6 h-6 rounded-full bg-blue-600 hover:scale-110 transition-all"></button>
+                                <button type="button" onclick="setPlotColor('#dc2626', this)" title="Crimson Red" class="color-swatch-btn w-6 h-6 rounded-full bg-red-600 hover:scale-110 transition-all"></button>
+                                <button type="button" onclick="setPlotColor('#059669', this)" title="Emerald Green" class="color-swatch-btn w-6 h-6 rounded-full bg-emerald-600 hover:scale-110 transition-all"></button>
+                                <button type="button" onclick="setPlotColor('#ea580c', this)" title="Amber Orange" class="color-swatch-btn w-6 h-6 rounded-full bg-orange-600 hover:scale-110 transition-all"></button>
+                                <button type="button" onclick="setPlotColor('#7c3aed', this)" title="Purple" class="color-swatch-btn w-6 h-6 rounded-full bg-purple-600 hover:scale-110 transition-all"></button>
+                                <label title="Custom Color Picker" class="w-6 h-6 rounded-full bg-gradient-to-tr from-rose-500 via-indigo-500 to-emerald-400 p-0.5 cursor-pointer hover:scale-110 transition-all flex items-center justify-center shrink-0">
+                                    <input type="color" id="plotCustomColorPicker" value="#000000" oninput="setPlotColor(this.value)" class="opacity-0 w-full h-full cursor-pointer">
+                                    <i class="fa-solid fa-eye-dropper text-[10px] text-white pointer-events-none drop-shadow"></i>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Object Inputs -->
+                        <div id="plotInputs" class="pt-2">
+                            <!-- Point Input -->
+                            <div id="inputs-point" class="space-y-2">
+                                <div class="grid grid-cols-2 gap-2" id="ptCoordsGrid">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">X Coordinate</label>
+                                        <input type="number" id="ptX" value="3" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                    <div id="ptYGroup">
+                                        <label class="text-[10px] text-slate-400 block mb-1">Y Coordinate</label>
+                                        <input type="number" id="ptY" value="4" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX Allowed)</label>
+                                    <input type="text" id="ptLabel" value="P_1(3, 4)" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. A, P_1, (3, 4)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                </div>
+                            </div>
+
+                            <!-- Function Input -->
+                            <div id="inputs-function" class="hidden space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-mono text-blue-400 font-bold">y =</span>
+                                    <input type="text" id="funcExpr" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. \frac{1}{2}x^2 - 4" value="\frac{1}{2}x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                </div>
+                            </div>
+
+                            <!-- 2D Inequality Input -->
+                            <div id="inputs-inequality" class="hidden space-y-2">
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Variable</label>
+                                        <select id="ineqVar" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                            <option value="y" selected>y</option>
+                                            <option value="x">x</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Operator</label>
+                                        <select id="ineqOp" onchange="updateLatexLivePreview(document.getElementById('ineqVar').value + ' ' + this.value + ' ' + document.getElementById('ineqExpr').value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                            <option value="<=">≤ (Solid)</option>
+                                            <option value="<">&lt; (Dashed)</option>
+                                            <option value=">=">≥ (Solid)</option>
+                                            <option value=">">&gt; (Dashed)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Boundary</label>
+                                        <span class="text-[10px] text-blue-400 font-mono self-center block pt-1">Shaded Region</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Expression f(x) or f(y)</label>
+                                    <input type="text" id="ineqExpr" oninput="updateLatexLivePreview(document.getElementById('ineqVar').value + ' ' + document.getElementById('ineqOp').value + ' ' + this.value)" placeholder="e.g. 2x - 1, x^2 - 3" value="2x - 1" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                </div>
+                            </div>
+
+                            <!-- 1D Number Line Inequality Input -->
+                            <div id="inputs-inequality1d" class="hidden space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Inequality Type</label>
+                                        <select id="ineq1dType" onchange="toggle1dIneqInputs(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                            <option value="gt">x &gt; a (Open Right)</option>
+                                            <option value="gte">x ≥ a (Closed Right)</option>
+                                            <option value="lt">x &lt; a (Open Left)</option>
+                                            <option value="lte">x ≤ a (Closed Left)</option>
+                                            <option value="interval">a &lt; x ≤ b (Interval)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Value (a)</label>
+                                        <input type="number" id="ineq1dA" value="3" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div id="ineq1dBGroup" class="hidden">
+                                    <label class="text-[10px] text-slate-400 block mb-1">Upper Value (b)</label>
+                                    <input type="number" id="ineq1dB" value="7" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                </div>
+                            </div>
+
+                            <!-- Complex Number Plot Input -->
+                            <div id="inputs-complex" class="hidden space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Real Part (Re)</label>
+                                        <input type="number" id="cplxRe" value="3" oninput="updateComplexPreview()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 block mb-1">Imaginary Part (Im)</label>
+                                        <input type="number" id="cplxIm" value="4" oninput="updateComplexPreview()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div class="space-y-1 pt-1 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                        <input type="checkbox" id="cplxVector" checked class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                                        Position Vector Arrow from Origin
+                                    </label>
+                                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                        <input type="checkbox" id="cplxModulus" class="rounded bg-slate-800 border-slate-700 text-purple-500 focus:ring-0">
+                                        Modulus Circle |z|
+                                    </label>
+                                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                        <input type="checkbox" id="cplxConjugate" class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-0">
+                                        Plot Complex Conjugate z̄
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX)</label>
+                                    <input type="text" id="cplxLabel" value="z_1 = 3 + 4i" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. z_1, 3+4i" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                </div>
+                            </div>
+
+                            <!-- Vector Input -->
+                            <div id="inputs-vector" class="hidden grid grid-cols-4 gap-1">
+                                <input type="number" id="vecX1" placeholder="X0" value="0" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                <input type="number" id="vecY1" placeholder="Y0" value="0" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                <input type="number" id="vecX2" placeholder="X1" value="4" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                                <input type="number" id="vecY2" placeholder="Y1" value="3" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-xs text-white">
+                            </div>
+
+                            <!-- Live KaTeX Expression Preview Box -->
+                            <div class="mt-2 p-2 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between">
+                                <span class="text-[10px] text-slate-500 font-medium">LaTeX Preview:</span>
+                                <div id="latexLivePreview" class="text-sm font-serif text-blue-300"></div>
+                            </div>
+                        </div>
+
+                        <button onclick="addPlotElement()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 shadow-md mt-2">
+                            <i class="fa-solid fa-plus"></i> Plot Object
+                        </button>
+                    </div>
+
+                    <!-- List of Plotted Elements -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Plots (<span id="plotCount">0</span>)</label>
+                            <button onclick="clearAllPlots()" class="text-[11px] text-rose-400 hover:underline">Clear All</button>
+                        </div>
+                        <div id="plotList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                            <div class="text-xs text-slate-500 italic p-3 text-center bg-slate-900/40 rounded-lg">No points or shapes plotted yet. Click the grid canvas or use the form above!</div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Theme Presets -->
-                <div class="space-y-2">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Color Themes</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="applyTheme('classic')" class="p-2 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">Minimalist Academic</button>
-                        <button onclick="applyTheme('blueprint')" class="p-2 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">Blueprint Blue</button>
+                <div id="content-sheet" class="hidden space-y-5">
+                    <div class="p-3 bg-indigo-950/30 border border-indigo-800/40 rounded-xl space-y-1">
+                        <span class="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-print"></i> Multi-Grid Worksheet Builder
+                        </span>
+                        <p class="text-[11px] text-slate-400">Arrange 1 to 6 identical or problem-focused grid boxes onto a single printable document.</p>
+                    </div>
+
+                    <!-- Worksheet Header Controls -->
+                    <div class="space-y-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Document Header</label>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Student Name & Date Banner</label>
+                            <input type="text" id="wsTitle" value="Name: ____________________   Date: _________   Class: ________" oninput="updateWorksheetHeader()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Worksheet Title / Topic</label>
+                            <input type="text" id="wsSubtitle" value="Topic: Graphing Inequalities & Coordinate Geometry" oninput="updateWorksheetHeader()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white">
+                        </div>
+                    </div>
+
+                    <!-- Grids Per Page Selector -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Page Grid Layout</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button onclick="setGridGridCount(1)" id="gridCount-1" class="p-2 bg-blue-600 text-white rounded-lg text-center text-xs transition-all font-medium">1 Grid</button>
+                            <button onclick="setGridGridCount(2)" id="gridCount-2" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">2 Grids</button>
+                            <button onclick="setGridGridCount(4)" id="gridCount-4" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">4 Grids</button>
+                            <button onclick="setGridGridCount(6)" id="gridCount-6" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium">6 Grids</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Problem Prompts</label>
+                        <div id="worksheetPromptsContainer" class="space-y-2"></div>
                     </div>
                 </div>
 
             </div>
-
         </aside>
 
-        <!-- Canvas / SVG Preview Panel -->
-        <main class="flex-1 bg-slate-950 p-4 md:p-8 flex flex-col items-center justify-center relative overflow-auto">
-            
-            <!-- Canvas Container Frame -->
-            <div id="canvas-wrapper" class="relative bg-white shadow-2xl rounded-lg p-2 transition-all">
-                <div id="grid-container" class="relative">
-                    <!-- SVG rendered dynamically -->
+        <main class="flex-1 bg-slate-950 flex flex-col overflow-hidden relative checkerboard-bg">
+
+            <!-- Workspace Top Status Bar -->
+            <div class="h-10 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800/80 flex items-center justify-between px-4 text-xs text-slate-400 z-10 workspace-bar">
+                <div class="flex items-center space-x-3">
+                    <span id="coordDisplay" class="font-mono text-blue-400 bg-slate-950 px-2.5 py-0.5 rounded border border-slate-800 font-semibold">
+                        X: 0.00, Y: 0.00
+                    </span>
+                    <span class="text-slate-700">|</span>
+                    <span id="gridDimensionsText" class="text-slate-400">20x20 Grid</span>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="zoomPreview(1.1)" title="Zoom In" class="p-1.5 text-slate-400 hover:text-white transition-colors rounded hover:bg-slate-800">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                    </button>
+                    <button onclick="zoomPreview(0.9)" title="Zoom Out" class="p-1.5 text-slate-400 hover:text-white transition-colors rounded hover:bg-slate-800">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i>
+                    </button>
+                    <button onclick="resetZoom()" title="Fit View" class="p-1.5 text-slate-400 hover:text-white transition-colors rounded hover:bg-slate-800">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Canvas Stats Footer Bar -->
-            <div class="mt-4 flex items-center space-x-6 text-xs text-slate-400 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-full backdrop-blur">
-                <div class="flex items-center space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span id="stat-mode">Mode: Cartesian (2D)</span>
-                </div>
-                <div>Domain: <span id="stat-domain" class="text-slate-200 font-mono">[0, 20]</span></div>
-                <div>Range: <span id="stat-range" class="text-slate-200 font-mono">[0, 1000]</span></div>
-            </div>
+            <!-- Preview Canvas Scroll Window -->
+            <div id="previewViewport" class="flex-1 flex items-center justify-center p-6 overflow-auto relative">
+                
+                <!-- SVG Worksheet Document Paper Wrapper -->
+                <div id="svgContainerWrapper" class="bg-white rounded-xl shadow-2xl transition-all duration-200 border border-slate-700/50 p-8 relative flex flex-col items-center min-w-[360px] max-w-[90vw]">
+                    
+                    <!-- Printable Worksheet Header Block -->
+                    <div id="worksheetHeader" class="w-full mb-6 text-slate-900 border-b-2 border-slate-900 pb-3 hidden">
+                        <div id="wsTitleText" class="text-sm font-bold tracking-tight mb-1 text-slate-900">Name: ____________________   Date: _________   Class: ________</div>
+                        <div id="wsSubtitleText" class="text-xs text-slate-600 font-semibold">Topic: Graphing Inequalities & Coordinate Geometry</div>
+                    </div>
 
+                    <!-- SVG Grid Mount Container -->
+                    <div id="gridGridContainer" class="flex items-center justify-center gap-6 flex-wrap max-w-full"></div>
+                </div>
+
+            </div>
         </main>
     </div>
 
-    <!-- Application State & Script -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 hidden p-4 no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl text-slate-200">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-download text-blue-500"></i> Export & Print Options
+                </h3>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Image Export Resolution</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setExportScale(1)" id="scale-1" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all">Standard (1x)</button>
+                        <button onclick="setExportScale(2)" id="scale-2" class="p-2.5 rounded-lg border border-blue-500 bg-blue-500/10 text-xs font-medium text-center transition-all text-blue-400">HD Crisp (2x)</button>
+                        <button onclick="setExportScale(4)" id="scale-4" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all">Ultra HD (4x)</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="downloadPNG()" class="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
+                        <i class="fa-solid fa-file-image text-lg"></i>
+                        <span>Download PNG</span>
+                    </button>
+                    <button onclick="downloadSVG()" class="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
+                        <i class="fa-solid fa-vector-square text-lg"></i>
+                        <span>Download Vector SVG</span>
+                    </button>
+                    <button onclick="copyImageToClipboard()" class="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
+                        <i class="fa-solid fa-copy text-lg"></i>
+                        <span>Copy PNG to Clipboard</span>
+                    </button>
+                    <button onclick="printWorksheet()" class="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1">
+                        <i class="fa-solid fa-print text-lg"></i>
+                        <span>Print Page / PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-blue-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 text-xs no-print">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-blue-400 text-base"></i>
+        <span id="toastMsg">Action completed successfully!</span>
+    </div>
+
     <script>
-        // --- Core Application State ---
-        const state = {
-            systemMode: '2d', // '2d', 'complex', '1d'
-            xMin: 0,
-            xMax: 20,
-            xStep: 2,
+        // Core Grid Configuration State
+        let config = {
+            planeType: 'cartesian', // 'cartesian', 'complex', 'numberline'
+            xMin: -10,
+            xMax: 10,
+            xStep: 1,
             xLabelStep: 2,
-            yMin: 0,
-            yMax: 1000,
-            yStep: 100,
-            yLabelStep: 100,
-            squareBoxes: false,
-            transparentBg: false,
-            numberFont: 'sans',
-            titleX: 'x',
-            titleY: 'y',
-            arrowEnds: 'none', // 'both', 'positive', 'none'
+            yMin: -10,
+            yMax: 10,
+            yStep: 1,
+            yLabelStep: 2,
+            keepSquareCells: false,
+            
+            xAxisLabel: 'x',
+            yAxisLabel: 'y',
+
+            arrowPosition: 'none', // 'both', 'positive', 'none'
             arrowStyle: 'triangle', // 'triangle', 'stealth', 'barb'
-            arrowSize: 'medium',
+            arrowSize: 'medium', // 'small', 'medium', 'large'
+
+            subdivisions: 1,
+            gridType: 'lines',
+            showXAxis: true,
+            showYAxis: true,
+            showXNumbers: true,
+            showYNumbers: true,
+            showArrows: true,
+            showOrigin: true,
             showIntersections: false,
-            selectedColor: '#000000',
-            activeObjectType: 'function',
-            objects: []
+            
+            transparentBg: false,
+            colorBg: '#ffffff',
+            colorAxis: '#0f172a',
+            colorGrid: '#cbd5e1',
+            colorMinor: '#f1f5f9',
+            fontFamily: 'Inter, sans-serif',
+            labelFontFamily: 'Inter, sans-serif',
+            fontSize: 13,
+            axisWidth: 2,
+            gridWidth: 1,
+            minorWidth: 0.5,
+            
+            layoutMode: 'single',
+            gridCount: 1,
+            wsTitle: 'Name: ____________________   Date: _________   Class: ________',
+            wsSubtitle: 'Topic: Graphing Inequalities & Coordinate Geometry',
+            prompts: [
+                '1. Graph the equation or inequality on the grid:',
+                '2. Plot the complex numbers z1 and z2 on the complex plane:',
+                '3. Graph the 1D inequality on the number line:',
+                '4. State the solution set in interval notation:',
+                '5. Graph the system of linear inequalities:',
+                '6. Calculate the modulus |z| of the given point:'
+            ]
         };
 
-        // Initialize Lucide Icons
-        lucide.createIcons();
+        const svgNS = "http://www.w3.org/2000/svg";
+        let plots = [];
+        let currentZoom = 1;
+        let exportScale = 2;
+        let selectedPlotType = 'point';
+        let selectedColor = '#000000';
 
-        // System Mode Switching
-        function setSystemMode(mode) {
-            state.systemMode = mode;
+        function renderLatexToSVG(parentGroup, latexStr, x, y, color, fontSize = 13, anchor = 'middle') {
+            if (!latexStr || latexStr.trim() === '') return;
+            const foreignObj = document.createElementNS(svgNS, "foreignObject");
+            const width = 160;
+            const height = 40;
             
-            // Highlight active mode button
-            ['2d', 'complex', '1d'].forEach(m => {
-                const btn = document.getElementById(`btn-mode-${m}`);
-                if (m === mode) {
-                    btn.className = "py-1.5 px-2 rounded text-xs font-medium bg-blue-600 text-white transition";
-                } else {
-                    btn.className = "py-1.5 px-2 rounded text-xs font-medium text-slate-400 hover:text-white transition";
+            let xPos = x - width / 2;
+            if (anchor === 'start') xPos = x;
+            else if (anchor === 'end') xPos = x - width;
+
+            foreignObj.setAttribute("x", xPos);
+            foreignObj.setAttribute("y", y - height / 2);
+            foreignObj.setAttribute("width", width);
+            foreignObj.setAttribute("height", height);
+            foreignObj.style.overflow = "visible";
+            foreignObj.style.pointerEvents = "none";
+            
+            const div = document.createElement("div");
+            div.style.display = "flex";
+            div.style.alignItems = "center";
+            div.style.height = "100%";
+            div.style.justifyContent = anchor === 'end' ? 'flex-end' : anchor === 'start' ? 'flex-start' : 'center';
+            div.style.color = color;
+            div.style.fontSize = `${fontSize}px`;
+            div.style.fontFamily = config.fontFamily;
+            div.style.lineHeight = "1";
+            div.style.whiteSpace = "nowrap";
+
+            try {
+                const formatted = (latexStr.includes('\\') || latexStr.includes('^') || latexStr.includes('_') || latexStr.includes('{') || latexStr.includes('}')) ? latexStr : `\\text{${latexStr}}`;
+                div.innerHTML = katex.renderToString(formatted, { throwOnError: false });
+            } catch(e) {
+                div.textContent = latexStr;
+            }
+
+            foreignObj.appendChild(div);
+            parentGroup.appendChild(foreignObj);
+        }
+
+        function parseLatexToJS(expr) {
+            if (!expr) return '0';
+            let js = expr.trim();
+            while (js.includes('\\frac')) {
+                js = js.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '(($1)/($2))');
+            }
+            while (js.includes('\\sqrt')) {
+                js = js.replace(/\\sqrt\s*\{([^{}]+)\}/g, 'Math.sqrt($1)');
+            }
+            js = js.replace(/\\pi/g, 'Math.PI');
+            js = js.replace(/\\sin/g, 'Math.sin');
+            js = js.replace(/\\cos/g, 'Math.cos');
+            js = js.replace(/\\tan/g, 'Math.tan');
+            js = js.replace(/\^\{([^}]+)\}/g, '**($1)');
+            js = js.replace(/\^([0-9a-zA-Z\.\-]+)/g, '**$1');
+            js = js.replace(/(\d)\s*([xXyY\(])/g, '$1*$2');
+            js = js.replace(/(\))\s*([xXyY\d\(])/g, '$1*$2');
+            js = js.replace(/([xXyY])\s*([xXyY])/g, '$1*$2');
+            return js;
+        }
+
+        function evalFunction(expr, val, varName = 'x') {
+            try {
+                const jsExpr = parseLatexToJS(expr);
+                const fn = new Function(varName, 'Math', `return ${jsExpr};`);
+                const result = fn(val, Math);
+                return (typeof result === 'number' && !isNaN(result) && isFinite(result)) ? result : NaN;
+            } catch(e) {
+                return NaN;
+            }
+        }
+
+        function createSingleGridSVG(width = 480, height = 480, gridIndex = 0) {
+            const svg = document.createElementNS(svgNS, "svg");
+            
+            const is1D = config.planeType === 'numberline';
+            const actualHeight = is1D ? 180 : height;
+
+            svg.setAttribute("width", width);
+            svg.setAttribute("height", actualHeight);
+            svg.setAttribute("viewBox", `0 0 ${width} ${actualHeight}`);
+            svg.style.backgroundColor = config.transparentBg ? 'transparent' : config.colorBg;
+            if (config.transparentBg) svg.classList.add('checkerboard-bg');
+            svg.style.borderRadius = "8px";
+
+            const padding = 45;
+            let plotW = width - padding * 2;
+            let plotH = actualHeight - padding * 2;
+
+            const xRange = Math.max(0.00001, config.xMax - config.xMin);
+            const yRange = is1D ? 1 : Math.max(0.00001, config.yMax - config.yMin);
+
+            const numBoxesX = xRange / config.xStep;
+            const numBoxesY = yRange / config.yStep;
+
+            if (!is1D && config.keepSquareCells && numBoxesX > 0 && numBoxesY > 0) {
+                const boxSize = Math.min(plotW / numBoxesX, plotH / numBoxesY);
+                plotW = boxSize * numBoxesX;
+                plotH = boxSize * numBoxesY;
+            }
+
+            const offsetX = padding + (width - padding * 2 - plotW) / 2;
+            const offsetY = is1D ? actualHeight / 2 : padding + (actualHeight - padding * 2 - plotH) / 2;
+
+            function toPx(x, y = 0) {
+                const px = offsetX + ((x - config.xMin) / xRange) * plotW;
+                const py = is1D ? offsetY : (actualHeight - offsetY - ((y - config.yMin) / yRange) * plotH);
+                return { x: px, y: py };
+            }
+
+            function toMath(px, py) {
+                const x = config.xMin + ((px - offsetX) / plotW) * xRange;
+                const y = is1D ? 0 : config.yMin + ((actualHeight - py - offsetY) / plotH) * yRange;
+                return { x, y };
+            }
+
+            const defs = document.createElementNS(svgNS, "defs");
+
+            // Custom Arrow Markers
+            const sizeMap = { small: { w: 4, h: 4, ref: 5 }, medium: { w: 6, h: 6, ref: 6 }, large: { w: 8, h: 8, ref: 7 } };
+            const arrowDim = sizeMap[config.arrowSize] || sizeMap.medium;
+
+            let arrowPathD = "M 0 0 L 10 5 L 0 10 z";
+            if (config.arrowStyle === 'stealth') arrowPathD = "M 0 0 L 10 5 L 0 10 L 7 5 z";
+            else if (config.arrowStyle === 'barb') arrowPathD = "M 0 0 L 10 5 L 0 10 L 3 5 z";
+
+            const markerEnd = document.createElementNS(svgNS, "marker");
+            markerEnd.setAttribute("id", `arrow-end-${gridIndex}`);
+            markerEnd.setAttribute("viewBox", "0 0 10 10");
+            markerEnd.setAttribute("refX", arrowDim.ref);
+            markerEnd.setAttribute("refY", "5");
+            markerEnd.setAttribute("markerWidth", arrowDim.w);
+            markerEnd.setAttribute("markerHeight", arrowDim.h);
+            markerEnd.setAttribute("orient", "auto");
+            
+            const pathEnd = document.createElementNS(svgNS, "path");
+            pathEnd.setAttribute("d", arrowPathD);
+            pathEnd.setAttribute("fill", config.colorAxis);
+            markerEnd.appendChild(pathEnd);
+            defs.appendChild(markerEnd);
+
+            const markerStart = document.createElementNS(svgNS, "marker");
+            markerStart.setAttribute("id", `arrow-start-${gridIndex}`);
+            markerStart.setAttribute("viewBox", "0 0 10 10");
+            markerStart.setAttribute("refX", 10 - arrowDim.ref);
+            markerStart.setAttribute("refY", "5");
+            markerStart.setAttribute("markerWidth", arrowDim.w);
+            markerStart.setAttribute("markerHeight", arrowDim.h);
+            markerStart.setAttribute("orient", "auto");
+
+            let arrowStartPathD = "M 10 0 L 0 5 L 10 10 z";
+            if (config.arrowStyle === 'stealth') arrowStartPathD = "M 10 0 L 0 5 L 10 10 L 3 5 z";
+            else if (config.arrowStyle === 'barb') arrowStartPathD = "M 10 0 L 0 5 L 10 10 L 7 5 z";
+
+            const pathStart = document.createElementNS(svgNS, "path");
+            pathStart.setAttribute("d", arrowStartPathD);
+            pathStart.setAttribute("fill", config.colorAxis);
+            markerStart.appendChild(pathStart);
+            defs.appendChild(markerStart);
+
+            const clipPath = document.createElementNS(svgNS, "clipPath");
+            clipPath.setAttribute("id", `grid-clip-${gridIndex}`);
+            const clipRect = document.createElementNS(svgNS, "rect");
+            clipRect.setAttribute("x", offsetX);
+            clipRect.setAttribute("y", is1D ? offsetY - 40 : offsetY);
+            clipRect.setAttribute("width", plotW);
+            clipRect.setAttribute("height", is1D ? 80 : plotH);
+            clipPath.appendChild(clipRect);
+            defs.appendChild(clipPath);
+
+            svg.appendChild(defs);
+
+            if (!is1D && config.gridType !== 'none') {
+                if (config.subdivisions > 1) {
+                    const gMinor = document.createElementNS(svgNS, "g");
+                    gMinor.setAttribute("stroke", config.colorMinor);
+                    gMinor.setAttribute("stroke-width", config.minorWidth);
+                    const subStepX = config.xStep / config.subdivisions;
+                    for (let x = config.xMin; x <= config.xMax + 1e-7; x += subStepX) {
+                        const p1 = toPx(x, config.yMin); const p2 = toPx(x, config.yMax);
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                        gMinor.appendChild(line);
+                    }
+                    const subStepY = config.yStep / config.subdivisions;
+                    for (let y = config.yMin; y <= config.yMax + 1e-7; y += subStepY) {
+                        const p1 = toPx(config.xMin, y); const p2 = toPx(config.xMax, y);
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                        gMinor.appendChild(line);
+                    }
+                    svg.appendChild(gMinor);
+                }
+
+                const gMajor = document.createElementNS(svgNS, "g");
+                gMajor.setAttribute("stroke", config.colorGrid);
+                gMajor.setAttribute("stroke-width", config.gridWidth);
+                if (config.gridType === 'dashed') gMajor.setAttribute("stroke-dasharray", "4,4");
+
+                for (let x = config.xMin; x <= config.xMax + 1e-7; x += config.xStep) {
+                    const p1 = toPx(x, config.yMin); const p2 = toPx(x, config.yMax);
+                    const line = document.createElementNS(svgNS, "line");
+                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                    gMajor.appendChild(line);
+                }
+                for (let y = config.yMin; y <= config.yMax + 1e-7; y += config.yStep) {
+                    const p1 = toPx(config.xMin, y); const p2 = toPx(config.xMax, y);
+                    const line = document.createElementNS(svgNS, "line");
+                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                    gMajor.appendChild(line);
+                }
+                svg.appendChild(gMajor);
+            }
+
+            const gAxes = document.createElementNS(svgNS, "g");
+            gAxes.setAttribute("stroke", config.colorAxis);
+            gAxes.setAttribute("stroke-width", config.axisWidth);
+
+            const originPx = toPx(0, 0);
+
+            // X-Axis Line
+            if (config.showXAxis) {
+                const xAxis = document.createElementNS(svgNS, "line");
+                const p1 = toPx(config.xMin, 0);
+                const p2 = toPx(config.xMax, 0);
+                const clampedY = is1D ? offsetY : Math.min(Math.max(p1.y, offsetY), actualHeight - offsetY);
+                xAxis.setAttribute("x1", Math.max(offsetX, p1.x)); xAxis.setAttribute("y1", clampedY);
+                xAxis.setAttribute("x2", Math.min(width - offsetX, p2.x)); xAxis.setAttribute("y2", clampedY);
+                
+                if (config.showArrows && config.arrowPosition !== 'none') {
+                    if (config.arrowPosition === 'both') {
+                        xAxis.setAttribute("marker-start", `url(#arrow-start-${gridIndex})`);
+                    }
+                    xAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                }
+                gAxes.appendChild(xAxis);
+            }
+
+            // Y-Axis Line
+            if (!is1D && config.showYAxis) {
+                const yAxis = document.createElementNS(svgNS, "line");
+                const p1 = toPx(0, config.yMin);
+                const p2 = toPx(0, config.yMax);
+                const clampedX = Math.min(Math.max(p1.x, offsetX), width - offsetX);
+                yAxis.setAttribute("x1", clampedX); yAxis.setAttribute("y1", Math.min(actualHeight - offsetY, p1.y));
+                yAxis.setAttribute("x2", clampedX); yAxis.setAttribute("y2", Math.max(offsetY, p2.y));
+                
+                if (config.showArrows && config.arrowPosition !== 'none') {
+                    if (config.arrowPosition === 'both') {
+                        yAxis.setAttribute("marker-start", `url(#arrow-start-${gridIndex})`);
+                    }
+                    yAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                }
+                gAxes.appendChild(yAxis);
+            }
+
+            svg.appendChild(gAxes);
+
+            const gText = document.createElementNS(svgNS, "g");
+            gText.setAttribute("fill", config.colorAxis);
+            gText.style.fontFamily = config.labelFontFamily;
+            gText.style.fontSize = `${config.fontSize}px`;
+
+            const xAxisPxY = is1D ? offsetY : Math.min(Math.max(originPx.y, offsetY), actualHeight - offsetY);
+            const yAxisPxX = Math.min(Math.max(originPx.x, offsetX), width - offsetX);
+
+            if (config.showXNumbers && config.showXAxis) {
+                for (let x = config.xMin; x <= config.xMax + 1e-7; x += config.xLabelStep) {
+                    const cleanX = Number(x.toFixed(6));
+                    if (Math.abs(cleanX) < 1e-7 && !config.showOrigin && config.showYAxis) continue;
+                    const pt = toPx(cleanX, 0);
+                    if (pt.x < offsetX - 1 || pt.x > width - offsetX + 1) continue;
+
+                    const tick = document.createElementNS(svgNS, "line");
+                    tick.setAttribute("x1", pt.x); tick.setAttribute("y1", xAxisPxY - 4);
+                    tick.setAttribute("x2", pt.x); tick.setAttribute("y2", xAxisPxY + 4);
+                    tick.setAttribute("stroke", config.colorAxis);
+                    tick.setAttribute("stroke-width", config.axisWidth);
+                    svg.appendChild(tick);
+
+                    const txt = document.createElementNS(svgNS, "text");
+                    txt.setAttribute("x", pt.x);
+                    txt.setAttribute("y", xAxisPxY + 18);
+                    txt.setAttribute("text-anchor", "middle");
+                    txt.textContent = cleanX;
+                    gText.appendChild(txt);
+                }
+            }
+
+            if (!is1D && config.showYNumbers && config.showYAxis) {
+                for (let y = config.yMin; y <= config.yMax + 1e-7; y += config.yLabelStep) {
+                    const cleanY = Number(y.toFixed(6));
+                    if (Math.abs(cleanY) < 1e-7) continue;
+                    const pt = toPx(0, cleanY);
+                    if (pt.y < offsetY - 1 || pt.y > actualHeight - offsetY + 1) continue;
+
+                    const tick = document.createElementNS(svgNS, "line");
+                    tick.setAttribute("x1", yAxisPxX - 4); tick.setAttribute("y1", pt.y);
+                    tick.setAttribute("x2", yAxisPxX + 4); tick.setAttribute("y2", pt.y);
+                    tick.setAttribute("stroke", config.colorAxis);
+                    tick.setAttribute("stroke-width", config.axisWidth);
+                    svg.appendChild(tick);
+
+                    const txt = document.createElementNS(svgNS, "text");
+                    txt.setAttribute("x", yAxisPxX - 8);
+                    txt.setAttribute("y", pt.y + 4);
+                    txt.setAttribute("text-anchor", "end");
+                    
+                    if (config.planeType === 'complex') {
+                        txt.textContent = cleanY === 1 ? 'i' : cleanY === -1 ? '-i' : `${cleanY}i`;
+                    } else {
+                        txt.textContent = cleanY;
+                    }
+                    gText.appendChild(txt);
+                }
+            }
+
+            svg.appendChild(gText);
+
+            // Axis Titles
+            if (config.xAxisLabel) {
+                renderLatexToSVG(svg, config.xAxisLabel, width - offsetX + 22, xAxisPxY, config.colorAxis, 14, 'start');
+            }
+            if (!is1D && config.yAxisLabel) {
+                renderLatexToSVG(svg, config.yAxisLabel, yAxisPxX, offsetY - 22, config.colorAxis, 14, 'middle');
+            }
+
+            const gPlottedObjects = document.createElementNS(svgNS, "g");
+            gPlottedObjects.setAttribute("clip-path", `url(#grid-clip-${gridIndex})`);
+
+            plots.forEach(plot => {
+                if (config.planeType === 'cartesian' && (plot.type === 'inequality1d' || plot.type === 'complex')) return;
+                if (config.planeType === 'complex' && (plot.type === 'inequality1d' || plot.type === 'function' || plot.type === 'inequality')) return;
+                if (config.planeType === 'numberline' && plot.type !== 'inequality1d' && plot.type !== 'point') return;
+
+                const gPlot = document.createElementNS(svgNS, "g");
+                
+                if (plot.type === 'point') {
+                    const pt = toPx(plot.x, plot.y);
+                    const circle = document.createElementNS(svgNS, "circle");
+                    circle.setAttribute("cx", pt.x); circle.setAttribute("cy", pt.y);
+                    circle.setAttribute("r", "5");
+                    circle.setAttribute("fill", plot.color);
+                    circle.setAttribute("stroke", config.colorBg);
+                    circle.setAttribute("stroke-width", "1.5");
+                    gPlot.appendChild(circle);
+
+                    if (plot.label) {
+                        renderLatexToSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
+                    }
+                } 
+                else if (plot.type === 'inequality1d') {
+                    if (config.planeType !== 'numberline') return;
+                    const ptA = toPx(plot.a, 0);
+                    const isClosedA = plot.ineqType === 'gte' || plot.ineqType === 'lte' || plot.ineqType === 'interval';
+                    
+                    if (plot.ineqType === 'gt' || plot.ineqType === 'gte') {
+                        const ptMax = toPx(config.xMax, 0);
+                        const ray = document.createElementNS(svgNS, "line");
+                        ray.setAttribute("x1", ptA.x); ray.setAttribute("y1", ptA.y);
+                        ray.setAttribute("x2", ptMax.x); ray.setAttribute("y2", ptMax.y);
+                        ray.setAttribute("stroke", plot.color);
+                        ray.setAttribute("stroke-width", "4");
+                        ray.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                        gPlot.appendChild(ray);
+                    } else if (plot.ineqType === 'lt' || plot.ineqType === 'lte') {
+                        const ptMin = toPx(config.xMin, 0);
+                        const ray = document.createElementNS(svgNS, "line");
+                        ray.setAttribute("x1", ptA.x); ray.setAttribute("y1", ptA.y);
+                        ray.setAttribute("x2", ptMin.x); ray.setAttribute("y2", ptMin.y);
+                        ray.setAttribute("stroke", plot.color);
+                        ray.setAttribute("stroke-width", "4");
+                        ray.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                        gPlot.appendChild(ray);
+                    } else if (plot.ineqType === 'interval') {
+                        const ptB = toPx(plot.b, 0);
+                        const seg = document.createElementNS(svgNS, "line");
+                        seg.setAttribute("x1", ptA.x); seg.setAttribute("y1", ptA.y);
+                        seg.setAttribute("x2", ptB.x); seg.setAttribute("y2", ptB.y);
+                        seg.setAttribute("stroke", plot.color);
+                        seg.setAttribute("stroke-width", "5");
+                        gPlot.appendChild(seg);
+
+                        const circleB = document.createElementNS(svgNS, "circle");
+                        circleB.setAttribute("cx", ptB.x); circleB.setAttribute("cy", ptB.y);
+                        circleB.setAttribute("r", "6");
+                        circleB.setAttribute("fill", plot.color);
+                        circleB.setAttribute("stroke", config.colorBg);
+                        circleB.setAttribute("stroke-width", "2");
+                        gPlot.appendChild(circleB);
+                    }
+
+                    const circleA = document.createElementNS(svgNS, "circle");
+                    circleA.setAttribute("cx", ptA.x); circleA.setAttribute("cy", ptA.y);
+                    circleA.setAttribute("r", "6");
+                    circleA.setAttribute("fill", isClosedA ? plot.color : config.colorBg);
+                    circleA.setAttribute("stroke", plot.color);
+                    circleA.setAttribute("stroke-width", "2.5");
+                    gPlot.appendChild(circleA);
+                }
+                else if (plot.type === 'complex') {
+                    if (config.planeType !== 'complex') return;
+                    const pt = toPx(plot.re, plot.im);
+                    const p0 = toPx(0, 0);
+
+                    if (plot.showModulus) {
+                        const modR = Math.hypot(plot.re, plot.im);
+                        const ptR = toPx(modR, 0);
+                        const radiusPx = Math.abs(ptR.x - p0.x);
+
+                        const modCircle = document.createElementNS(svgNS, "circle");
+                        modCircle.setAttribute("cx", p0.x); modCircle.setAttribute("cy", p0.y);
+                        modCircle.setAttribute("r", radiusPx);
+                        modCircle.setAttribute("fill", "none");
+                        modCircle.setAttribute("stroke", plot.color);
+                        modCircle.setAttribute("stroke-width", "1.5");
+                        modCircle.setAttribute("stroke-dasharray", "4,4");
+                        gPlot.appendChild(modCircle);
+                    }
+
+                    if (plot.showVector) {
+                        const vecLine = document.createElementNS(svgNS, "line");
+                        vecLine.setAttribute("x1", p0.x); vecLine.setAttribute("y1", p0.y);
+                        vecLine.setAttribute("x2", pt.x); vecLine.setAttribute("y2", pt.y);
+                        vecLine.setAttribute("stroke", plot.color);
+                        vecLine.setAttribute("stroke-width", "2.5");
+                        vecLine.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                        gPlot.appendChild(vecLine);
+                    }
+
+                    const circle = document.createElementNS(svgNS, "circle");
+                    circle.setAttribute("cx", pt.x); circle.setAttribute("cy", pt.y);
+                    circle.setAttribute("r", "5.5");
+                    circle.setAttribute("fill", plot.color);
+                    circle.setAttribute("stroke", config.colorBg);
+                    circle.setAttribute("stroke-width", "1.5");
+                    gPlot.appendChild(circle);
+
+                    if (plot.label) {
+                        renderLatexToSVG(gPlot, plot.label, pt.x + 18, pt.y - 12, plot.color, 12, 'start');
+                    }
+                }
+                else if (plot.type === 'inequality') {
+                    if (config.planeType === 'numberline') return;
+                    const isVarY = (plot.var || 'y') === 'y';
+                    const samples = 250;
+                    const curvePts = [];
+
+                    if (isVarY) {
+                        for (let i = 0; i <= samples; i++) {
+                            const xVal = config.xMin + (i / samples) * xRange;
+                            const yVal = evalFunction(plot.expr, xVal, 'x');
+                            if (!isNaN(yVal)) {
+                                curvePts.push({ x: xVal, y: yVal, px: toPx(xVal, yVal) });
+                            }
+                        }
+
+                        if (curvePts.length > 1) {
+                            const shadePoly = document.createElementNS(svgNS, "polygon");
+                            let polyPoints = "";
+                            
+                            curvePts.forEach(p => { polyPoints += `${p.px.x},${p.px.y} `; });
+                            
+                            const pMinMin = toPx(config.xMin, config.yMin);
+                            const pMaxMin = toPx(config.xMax, config.yMin);
+                            const pMinMax = toPx(config.xMin, config.yMax);
+                            const pMaxMax = toPx(config.xMax, config.yMax);
+
+                            if (plot.op === '<=' || plot.op === '<') {
+                                polyPoints += `${pMaxMin.x},${pMaxMin.y} ${pMinMin.x},${pMinMin.y}`;
+                            } else {
+                                polyPoints += `${pMaxMax.x},${pMaxMax.y} ${pMinMax.x},${pMinMax.y}`;
+                            }
+
+                            shadePoly.setAttribute("points", polyPoints);
+                            shadePoly.setAttribute("fill", plot.color);
+                            shadePoly.setAttribute("fill-opacity", "0.22");
+                            gPlot.appendChild(shadePoly);
+
+                            const boundaryPath = document.createElementNS(svgNS, "path");
+                            let d = "";
+                            curvePts.forEach((p, idx) => {
+                                d += (idx === 0 ? "M " : "L ") + `${p.px.x} ${p.px.y} `;
+                            });
+                            boundaryPath.setAttribute("d", d);
+                            boundaryPath.setAttribute("fill", "none");
+                            boundaryPath.setAttribute("stroke", plot.color);
+                            boundaryPath.setAttribute("stroke-width", "2.5");
+                            if (plot.op === '<' || plot.op === '>') {
+                                boundaryPath.setAttribute("stroke-dasharray", "6,6");
+                            }
+                            gPlot.appendChild(boundaryPath);
+                        }
+                    }
+                }
+                else if (plot.type === 'function') {
+                    if (config.planeType === 'numberline') return;
+                    const path = document.createElementNS(svgNS, "path");
+                    let d = "";
+                    let isDrawing = false;
+                    const samples = 300;
+
+                    for (let i = 0; i <= samples; i++) {
+                        const xVal = config.xMin + (i / samples) * xRange;
+                        const yVal = evalFunction(plot.expr, xVal, 'x');
+                        if (typeof yVal === 'number' && !isNaN(yVal) && isFinite(yVal)) {
+                            const pt = toPx(xVal, yVal);
+                            if (!isDrawing) { d += `M ${pt.x} ${pt.y} `; isDrawing = true; }
+                            else { d += `L ${pt.x} ${pt.y} `; }
+                        } else { isDrawing = false; }
+                    }
+
+                    if (d) {
+                        path.setAttribute("d", d);
+                        path.setAttribute("fill", "none");
+                        path.setAttribute("stroke", plot.color);
+                        path.setAttribute("stroke-width", "2.5");
+                        gPlot.appendChild(path);
+                    }
+                }
+                else if (plot.type === 'vector') {
+                    if (config.planeType === 'numberline') return;
+                    const p1 = toPx(plot.x1, plot.y1);
+                    const p2 = toPx(plot.x2, plot.y2);
+                    const line = document.createElementNS(svgNS, "line");
+                    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+                    line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+                    line.setAttribute("stroke", plot.color);
+                    line.setAttribute("stroke-width", "2.5");
+                    line.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
+                    gPlot.appendChild(line);
+                }
+
+                gPlottedObjects.appendChild(gPlot);
+            });
+
+            svg.appendChild(gPlottedObjects);
+
+            svg.addEventListener("mousemove", (e) => {
+                const rect = svg.getBoundingClientRect();
+                const px = (e.clientX - rect.left) * (width / rect.width);
+                const py = (e.clientY - rect.top) * (actualHeight / rect.height);
+                const coords = toMath(px, py);
+                if (coords.x >= config.xMin && coords.x <= config.xMax) {
+                    if (is1D) {
+                        document.getElementById("coordDisplay").innerText = `X: ${coords.x.toFixed(2)}`;
+                    } else if (config.planeType === 'complex') {
+                        document.getElementById("coordDisplay").innerText = `Re: ${coords.x.toFixed(2)}, Im: ${coords.y.toFixed(2)}i`;
+                    } else {
+                        document.getElementById("coordDisplay").innerText = `X: ${coords.x.toFixed(2)}, Y: ${coords.y.toFixed(2)}`;
+                    }
                 }
             });
 
-            // Adjust form visibility for 1D / Complex modes
-            const yAxisContainer = document.getElementById('y-axis-container');
-            const titleYContainer = document.getElementById('title-y-container');
-            const xLabelHeading = document.getElementById('x-axis-label-heading');
-            const titleXLabel = document.getElementById('title-x-label');
-
-            if (mode === '1d') {
-                yAxisContainer.classList.add('hidden');
-                titleYContainer.classList.add('hidden');
-                xLabelHeading.textContent = "NUMBER LINE LIMITS";
-                titleXLabel.textContent = "Variable Label";
-            } else if (mode === 'complex') {
-                yAxisContainer.classList.remove('hidden');
-                titleYContainer.classList.remove('hidden');
-                xLabelHeading.textContent = "REAL AXIS (Re)";
-                document.getElementById('y-axis-label-heading').textContent = "IMAGINARY AXIS (Im)";
-                titleXLabel.textContent = "Real Label";
-                document.getElementById('title-y-label').textContent = "Imaginary Label";
-            } else {
-                yAxisContainer.classList.remove('hidden');
-                titleYContainer.classList.remove('hidden');
-                xLabelHeading.textContent = "X-AXIS LIMITS & LABELS";
-                document.getElementById('y-axis-label-heading').textContent = "Y-AXIS LIMITS & LABELS";
-                titleXLabel.textContent = "X-Axis Title";
-                document.getElementById('title-y-label').textContent = "Y-Axis Title";
-            }
-
-            updateObjectTypeToolbar();
-            render();
+            return svg;
         }
 
-        function updateObjectTypeToolbar() {
-            const container = document.getElementById('object-type-buttons');
-            container.innerHTML = '';
+        function render() {
+            const container = document.getElementById("gridGridContainer");
+            container.innerHTML = "";
 
-            let types = [];
-            if (state.systemMode === '2d') {
-                types = [
-                    { id: 'function', label: 'Function f(x)' },
-                    { id: 'point', label: 'Point (x,y)' },
-                    { id: 'inequality2d', label: '2D Inequality' },
-                    { id: 'vector', label: 'Vector' }
-                ];
-            } else if (state.systemMode === 'complex') {
-                types = [
-                    { id: 'complex', label: 'Complex z = a+bi' },
-                    { id: 'point', label: 'Point' }
-                ];
-            } else if (state.systemMode === '1d') {
-                types = [
-                    { id: 'inequality1d', label: '1D Inequality' },
-                    { id: 'point1d', label: 'Number Point' }
-                ];
+            const wsHeader = document.getElementById("worksheetHeader");
+            if (config.layoutMode === 'worksheet') wsHeader.classList.remove("hidden");
+            else wsHeader.classList.add("hidden");
+
+            const count = config.layoutMode === 'worksheet' ? config.gridCount : 1;
+            const dimsText = config.planeType === 'numberline' ? `${Math.abs(config.xMax - config.xMin)} Unit Line` : `${Math.abs(config.xMax - config.xMin)}x${Math.abs(config.yMax - config.yMin)} Grid`;
+            document.getElementById("gridDimensionsText").innerText = dimsText;
+
+            let size = 480;
+            if (count === 2) size = 400;
+            if (count >= 4) size = 320;
+
+            for (let i = 0; i < count; i++) {
+                const box = document.createElement("div");
+                box.className = "flex flex-col items-center gap-2 grid-svg-item";
+
+                if (config.layoutMode === 'worksheet') {
+                    const prompt = document.createElement("div");
+                    prompt.className = "text-xs font-semibold text-slate-800 w-full text-left";
+                    prompt.innerText = config.prompts[i] || `${i + 1}. Graph the following equation:`;
+                    box.appendChild(prompt);
+                }
+
+                const svgEl = createSingleGridSVG(size, size, i);
+                box.appendChild(svgEl);
+                container.appendChild(box);
             }
 
-            types.forEach((t, index) => {
-                const btn = document.createElement('button');
-                btn.className = `py-1.5 px-2 rounded border text-xs font-medium transition ${index === 0 ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-300'}`;
-                btn.textContent = t.label;
-                btn.onclick = () => selectObjectType(t.id, btn);
-                container.appendChild(btn);
-            });
-
-            if (types.length > 0) {
-                selectObjectType(types[0].id, container.children[0]);
-            }
+            renderPlotList();
         }
 
-        function selectObjectType(type, btnElement) {
-            state.activeObjectType = type;
-            const container = document.getElementById('object-type-buttons');
-            Array.from(container.children).forEach(child => {
-                child.className = 'py-1.5 px-2 rounded border border-slate-700 bg-slate-900 text-xs font-medium text-slate-300 transition';
+        function setPlaneType(type) {
+            config.planeType = type;
+            ['cartesian', 'complex', 'numberline'].forEach(p => {
+                const btn = document.getElementById(`planeType-${p}`);
+                if (p === type) btn.className = "py-1.5 rounded bg-blue-600 text-white text-center transition-all";
+                else btn.className = "py-1.5 rounded text-slate-400 hover:text-white text-center transition-all";
             });
-            if (btnElement) {
-                btnElement.className = 'py-1.5 px-2 rounded border border-blue-500 bg-blue-600 text-xs font-medium text-white transition';
-            }
 
-            const fields = document.getElementById('object-form-fields');
-            if (type === 'function') {
-                fields.innerHTML = `
-                    <label class="block text-[11px] text-slate-400 mb-1">Function y = f(x)</label>
-                    <input type="text" id="obj-expr" value="x^2 - 4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none">
-                `;
-            } else if (type === 'point') {
-                fields.innerHTML = `
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">X Coordinate</label>
-                            <input type="number" id="obj-x" value="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Y Coordinate</label>
-                            <input type="number" id="obj-y" value="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
-                        </div>
-                    </div>
-                `;
+            const yContainer = document.getElementById('yAxisBoundsContainer');
+            const yGroup = document.getElementById('yAxisTitleGroup');
+            
+            const btnPt = document.getElementById('plotType-point');
+            const btnFunc = document.getElementById('plotType-function');
+            const btnIneq = document.getElementById('plotType-inequality');
+            const btn1D = document.getElementById('plotType-inequality1d');
+            const btnCplx = document.getElementById('plotType-complex');
+            const btnVec = document.getElementById('plotType-vector');
+
+            const ptYGroup = document.getElementById('ptYGroup');
+
+            if (type === 'numberline') {
+                yContainer.classList.add('hidden');
+                yGroup.classList.add('hidden');
+                if (ptYGroup) ptYGroup.classList.add('hidden');
+
+                if (btn1D) btn1D.classList.remove('hidden');
+                if (btnPt) btnPt.classList.remove('hidden');
+                if (btnFunc) btnFunc.classList.add('hidden');
+                if (btnIneq) btnIneq.classList.add('hidden');
+                if (btnCplx) btnCplx.classList.add('hidden');
+                if (btnVec) btnVec.classList.add('hidden');
+
+                setPlotType('inequality1d');
+
+                config.xAxisLabel = 'x';
+                document.getElementById('xAxisLabel').value = config.xAxisLabel;
             } else if (type === 'complex') {
-                fields.innerHTML = `
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Real Part (a)</label>
-                            <input type="number" id="obj-re" value="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Imaginary Part (b)</label>
-                            <input type="number" id="obj-im" value="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
-                        </div>
-                    </div>
-                `;
-            } else if (type === 'inequality1d') {
-                fields.innerHTML = `
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Operator</label>
-                            <select id="obj-op1d" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
-                                <option value=">">x &gt; a</option>
-                                <option value=">=">x &ge; a</option>
-                                <option value="<">x &lt; a</option>
-                                <option value="<=">x &le; a</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Value (a)</label>
-                            <input type="number" id="obj-val1d" value="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
-                        </div>
-                    </div>
-                `;
+                yContainer.classList.remove('hidden');
+                yGroup.classList.remove('hidden');
+                if (ptYGroup) ptYGroup.classList.remove('hidden');
+
+                if (btnCplx) btnCplx.classList.remove('hidden');
+                if (btnPt) btnPt.classList.remove('hidden');
+                if (btnVec) btnVec.classList.remove('hidden');
+                if (btn1D) btn1D.classList.add('hidden');
+                if (btnFunc) btnFunc.classList.add('hidden');
+                if (btnIneq) btnIneq.classList.add('hidden');
+
+                setPlotType('complex');
+
+                config.xAxisLabel = '\\text{Re}';
+                config.yAxisLabel = '\\text{Im}';
+                document.getElementById('xAxisLabel').value = config.xAxisLabel;
+                document.getElementById('yAxisLabel').value = config.yAxisLabel;
+            } else {
+                yContainer.classList.remove('hidden');
+                yGroup.classList.remove('hidden');
+                if (ptYGroup) ptYGroup.classList.remove('hidden');
+
+                if (btnPt) btnPt.classList.remove('hidden');
+                if (btnFunc) btnFunc.classList.remove('hidden');
+                if (btnIneq) btnIneq.classList.remove('hidden');
+                if (btnVec) btnVec.classList.remove('hidden');
+                if (btn1D) btn1D.classList.add('hidden');
+                if (btnCplx) btnCplx.classList.add('hidden');
+
+                setPlotType('function');
+
+                config.xAxisLabel = 'x';
+                config.yAxisLabel = 'y';
+                document.getElementById('xAxisLabel').value = config.xAxisLabel;
+                document.getElementById('yAxisLabel').value = config.yAxisLabel;
             }
+
+            render();
         }
 
-        function selectObjectColor(color) {
-            state.selectedColor = color;
-            const buttons = document.querySelectorAll('#color-swatches button');
-            buttons.forEach(btn => {
-                if (btn.getAttribute('data-color') === color) {
-                    btn.className = "w-6 h-6 rounded-full border border-slate-600 ring-2 ring-blue-500 scale-110";
-                } else {
-                    btn.className = "w-6 h-6 rounded-full border border-slate-600";
+        function updateConfig(key, value) {
+            config[key] = value;
+            render();
+        }
+
+        function updateGridFromInput() {
+            config.xMin = parseFloat(document.getElementById('xMin').value);
+            if (isNaN(config.xMin)) config.xMin = -10;
+            
+            config.xMax = parseFloat(document.getElementById('xMax').value);
+            if (isNaN(config.xMax)) config.xMax = 10;
+            
+            config.xStep = parseFloat(document.getElementById('xStep').value);
+            if (isNaN(config.xStep) || config.xStep <= 0) config.xStep = 1;
+            
+            config.xLabelStep = parseFloat(document.getElementById('xLabelStep').value);
+            if (isNaN(config.xLabelStep) || config.xLabelStep <= 0) config.xLabelStep = config.xStep;
+
+            config.yMin = parseFloat(document.getElementById('yMin').value);
+            if (isNaN(config.yMin)) config.yMin = -10;
+            
+            config.yMax = parseFloat(document.getElementById('yMax').value);
+            if (isNaN(config.yMax)) config.yMax = 10;
+            
+            config.yStep = parseFloat(document.getElementById('yStep').value);
+            if (isNaN(config.yStep) || config.yStep <= 0) config.yStep = 1;
+            
+            config.yLabelStep = parseFloat(document.getElementById('yLabelStep').value);
+            if (isNaN(config.yLabelStep) || config.yLabelStep <= 0) config.yLabelStep = config.yStep;
+
+            render();
+        }
+
+        function applyPreset(name) {
+            if (name === 'standard') {
+                setPlaneType('cartesian');
+                config.xMin = -10; config.xMax = 10; config.xStep = 1; config.xLabelStep = 2;
+                config.yMin = -10; config.yMax = 10; config.yStep = 1; config.yLabelStep = 2;
+            } else if (name === 'q1') {
+                setPlaneType('cartesian');
+                config.xMin = 0; config.xMax = 20; config.xStep = 2; config.xLabelStep = 2;
+                config.yMin = 0; config.yMax = 1000; config.yStep = 100; config.yLabelStep = 100;
+            } else if (name === 'complex') {
+                setPlaneType('complex');
+                config.xMin = -8; config.xMax = 8; config.xStep = 1; config.xLabelStep = 2;
+                config.yMin = -8; config.yMax = 8; config.yStep = 1; config.yLabelStep = 2;
+            } else if (name === 'numberline') {
+                setPlaneType('numberline');
+                config.xMin = -10; config.xMax = 10; config.xStep = 1; config.xLabelStep = 2;
+            }
+
+            document.getElementById('xMin').value = config.xMin;
+            document.getElementById('xMax').value = config.xMax;
+            document.getElementById('xStep').value = config.xStep;
+            document.getElementById('xLabelStep').value = config.xLabelStep;
+
+            document.getElementById('yMin').value = config.yMin;
+            document.getElementById('yMax').value = config.yMax;
+            document.getElementById('yStep').value = config.yStep;
+            document.getElementById('yLabelStep').value = config.yLabelStep;
+
+            render();
+        }
+
+        function setTheme(name) {
+            if (name === 'classic') {
+                config.colorBg = '#ffffff'; config.colorAxis = '#0f172a'; config.colorGrid = '#cbd5e1'; config.colorMinor = '#f1f5f9'; config.transparentBg = false;
+            } else if (name === 'slate') {
+                config.colorBg = '#0f172a'; config.colorAxis = '#f8fafc'; config.colorGrid = '#334155'; config.colorMinor = '#1e293b'; config.transparentBg = false;
+            } else if (name === 'blueprint') {
+                config.colorBg = '#1e3a8a'; config.colorAxis = '#ffffff'; config.colorGrid = '#3b82f6'; config.colorMinor = '#2563eb'; config.transparentBg = false;
+            } else if (name === 'chalk') {
+                config.colorBg = '#064e3b'; config.colorAxis = '#ecfdf5'; config.colorGrid = '#047857'; config.colorMinor = '#065f46'; config.transparentBg = false;
+            }
+
+            document.getElementById('colorBg').value = config.colorBg;
+            document.getElementById('colorAxis').value = config.colorAxis;
+            document.getElementById('colorGrid').value = config.colorGrid;
+            document.getElementById('colorMinor').value = config.colorMinor;
+            document.getElementById('transparentBg').checked = config.transparentBg;
+            render();
+        }
+
+        function setPlotType(type) {
+            selectedPlotType = type;
+            ['point', 'function', 'inequality', 'inequality1d', 'complex', 'vector'].forEach(t => {
+                const btn = document.getElementById(`plotType-${t}`);
+                const inputDiv = document.getElementById(`inputs-${t}`);
+                if (btn && inputDiv) {
+                    if (t === type) {
+                        btn.className = "py-1 rounded bg-blue-600 text-white text-center transition-all";
+                        inputDiv.classList.remove('hidden');
+                    } else {
+                        btn.className = "py-1 rounded text-slate-400 hover:text-white text-center transition-all";
+                        inputDiv.classList.add('hidden');
+                    }
                 }
             });
+
+            if (type === 'complex') updateComplexPreview();
         }
 
-        function addObject() {
-            const obj = {
-                id: Date.now(),
-                type: state.activeObjectType,
-                color: state.selectedColor,
-                mode: state.systemMode
-            };
+        function setPlotColor(color, element = null) {
+            selectedColor = color;
+            const customPicker = document.getElementById('plotCustomColorPicker');
+            if (customPicker) customPicker.value = color;
 
-            if (obj.type === 'function') {
-                obj.expr = document.getElementById('obj-expr').value;
-            } else if (obj.type === 'point') {
-                obj.x = parseFloat(document.getElementById('obj-x').value) || 0;
-                obj.y = parseFloat(document.getElementById('obj-y').value) || 0;
-            } else if (obj.type === 'complex') {
-                obj.re = parseFloat(document.getElementById('obj-re').value) || 0;
-                obj.im = parseFloat(document.getElementById('obj-im').value) || 0;
-            } else if (obj.type === 'inequality1d') {
-                obj.op = document.getElementById('obj-op1d').value;
-                obj.val = parseFloat(document.getElementById('obj-val1d').value) || 0;
+            const colorDisplay = document.getElementById('colorNameDisplay');
+            if (colorDisplay) colorDisplay.innerText = color;
+
+            const swatches = document.querySelectorAll('.color-swatch-btn');
+            swatches.forEach(btn => btn.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-900', 'scale-110'));
+
+            if (element) element.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-900', 'scale-110');
+        }
+
+        function toggle1dIneqInputs(val) {
+            const bGroup = document.getElementById('ineq1dBGroup');
+            if (val === 'interval') bGroup.classList.remove('hidden');
+            else bGroup.classList.add('hidden');
+        }
+
+        function updateComplexPreview() {
+            const re = parseFloat(document.getElementById('cplxRe').value) || 0;
+            const im = parseFloat(document.getElementById('cplxIm').value) || 0;
+            let expr = `z = ${re} + ${im}i`;
+            if (im < 0) expr = `z = ${re} - ${Math.abs(im)}i`;
+            document.getElementById('cplxLabel').value = expr;
+            updateLatexLivePreview(expr);
+        }
+
+        function addPlotElement() {
+            if (selectedPlotType === 'point') {
+                const x = parseFloat(document.getElementById('ptX').value) || 0;
+                const y = config.planeType === 'numberline' ? 0 : (parseFloat(document.getElementById('ptY').value) || 0);
+                const label = document.getElementById('ptLabel').value;
+                plots.push({ id: Date.now(), type: 'point', x, y, label, color: selectedColor });
+            } else if (selectedPlotType === 'function') {
+                if (config.planeType !== 'cartesian') return;
+                const expr = document.getElementById('funcExpr').value || 'x';
+                plots.push({ id: Date.now(), type: 'function', expr, color: selectedColor });
+            } else if (selectedPlotType === 'inequality') {
+                if (config.planeType !== 'cartesian') return;
+                const expr = document.getElementById('ineqExpr').value || 'x';
+                const op = document.getElementById('ineqOp').value;
+                const v = document.getElementById('ineqVar').value;
+                plots.push({ id: Date.now(), type: 'inequality', expr, op, var: v, color: selectedColor });
+            } else if (selectedPlotType === 'inequality1d') {
+                if (config.planeType !== 'numberline') return;
+                const ineqType = document.getElementById('ineq1dType').value;
+                const a = parseFloat(document.getElementById('ineq1dA').value) || 0;
+                const b = parseFloat(document.getElementById('ineq1dB').value) || 0;
+                plots.push({ id: Date.now(), type: 'inequality1d', ineqType, a, b, color: selectedColor });
+            } else if (selectedPlotType === 'complex') {
+                if (config.planeType !== 'complex') return;
+                const re = parseFloat(document.getElementById('cplxRe').value) || 0;
+                const im = parseFloat(document.getElementById('cplxIm').value) || 0;
+                const showVector = document.getElementById('cplxVector').checked;
+                const showModulus = document.getElementById('cplxModulus').checked;
+                const showConjugate = document.getElementById('cplxConjugate').checked;
+                const label = document.getElementById('cplxLabel').value;
+                plots.push({ id: Date.now(), type: 'complex', re, im, showVector, showModulus, showConjugate, label, color: selectedColor });
+            } else if (selectedPlotType === 'vector') {
+                if (config.planeType === 'numberline') return;
+                const x1 = parseFloat(document.getElementById('vecX1').value) || 0;
+                const y1 = parseFloat(document.getElementById('vecY1').value) || 0;
+                const x2 = parseFloat(document.getElementById('vecX2').value) || 0;
+                const y2 = parseFloat(document.getElementById('vecY2').value) || 0;
+                plots.push({ id: Date.now(), type: 'vector', x1, y1, x2, y2, color: selectedColor });
             }
+            render();
+            showToast('Plotted object on grid!');
+        }
 
-            state.objects.push(obj);
-            updateObjectsList();
+        function clearAllPlots() {
+            plots = [];
+            render();
+            showToast('Cleared all objects');
+        }
+
+        function removePlot(id) {
+            plots = plots.filter(p => p.id !== id);
             render();
         }
 
-        function removeObject(id) {
-            state.objects = state.objects.filter(o => o.id !== id);
-            updateObjectsList();
-            render();
+        function formatToLaTeX(p) {
+            if (p.type === 'point') return p.label ? p.label : (config.planeType === 'numberline' ? `x = ${p.x}` : `(${p.x}, ${p.y})`);
+            if (p.type === 'function') return `y = ${p.expr}`;
+            if (p.type === 'inequality') return `${p.var || 'y'} ${p.op.replace('<=', '\\le').replace('>=', '\\ge')} ${p.expr}`;
+            if (p.type === 'inequality1d') {
+                if (p.ineqType === 'gt') return `x > ${p.a}`;
+                if (p.ineqType === 'gte') return `x \\ge ${p.a}`;
+                if (p.ineqType === 'lt') return `x < ${p.a}`;
+                if (p.ineqType === 'lte') return `x \\le ${p.a}`;
+                if (p.ineqType === 'interval') return `${p.a} < x \\le ${p.b}`;
+            }
+            if (p.type === 'complex') return p.label ? p.label : `z = ${p.re} + ${p.im}i`;
+            if (p.type === 'vector') return `\\vec{v}((${p.x1},${p.y1}) \\to (${p.x2},${p.y2}))`;
+            return 'Object';
         }
 
-        function updateObjectsList() {
-            const container = document.getElementById('active-objects-list');
-            if (state.objects.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-500 italic p-3 text-center border border-dashed border-slate-800 rounded-lg">No objects added to grid yet.</div>`;
+        function isPlotValidForMode(plot, mode) {
+            if (mode === 'cartesian') return plot.type === 'point' || plot.type === 'function' || plot.type === 'inequality' || plot.type === 'vector';
+            if (mode === 'complex') return plot.type === 'complex' || plot.type === 'point' || plot.type === 'vector';
+            if (mode === 'numberline') return plot.type === 'inequality1d' || plot.type === 'point';
+            return true;
+        }
+
+        function renderPlotList() {
+            const list = document.getElementById('plotList');
+            const activeModePlots = plots.filter(p => isPlotValidForMode(p, config.planeType));
+            document.getElementById('plotCount').innerText = activeModePlots.length;
+
+            if (activeModePlots.length === 0) {
+                list.innerHTML = `<div class="text-xs text-slate-500 italic p-3 text-center bg-slate-900/40 rounded-lg">No points or shapes plotted for this plane mode yet. Click the grid canvas or use the form above!</div>`;
                 return;
             }
 
-            container.innerHTML = '';
-            state.objects.forEach(obj => {
+            list.innerHTML = '';
+            activeModePlots.forEach(p => {
                 const item = document.createElement('div');
-                item.className = 'flex items-center justify-between p-2.5 bg-slate-950/60 border border-slate-800 rounded-lg text-xs';
+                item.className = "flex items-center justify-between p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-xs hover:border-slate-700 transition-all";
                 
-                let desc = '';
-                if (obj.type === 'function') desc = `y = ${obj.expr}`;
-                else if (obj.type === 'point') desc = `Point (${obj.x}, ${obj.y})`;
-                else if (obj.type === 'complex') desc = `z = ${obj.re} + ${obj.im}i`;
-                else if (obj.type === 'inequality1d') desc = `x ${obj.op} ${obj.val}`;
+                const latexStr = formatToLaTeX(p);
+                let renderedMath = latexStr;
+
+                if (window.katex) {
+                    try { renderedMath = katex.renderToString(latexStr, { throwOnError: false }); } catch (err) { renderedMath = latexStr; }
+                }
 
                 item.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full" style="background-color: ${obj.color}"></span>
-                        <span class="font-mono text-slate-200">${desc}</span>
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <span class="w-3 h-3 rounded-full shrink-0 shadow-sm border border-slate-700" style="background-color: ${p.color}"></span>
+                        <div class="truncate text-slate-100 text-xs font-serif leading-none">${renderedMath}</div>
                     </div>
-                    <button onclick="removeObject(${obj.id})" class="text-slate-500 hover:text-red-400 transition">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <button onclick="removePlot(${p.id})" class="text-slate-500 hover:text-rose-400 p-1 transition-colors" title="Delete Plot">
+                        <i class="fa-solid fa-trash-can"></i>
                     </button>
                 `;
-                container.appendChild(item);
+                list.appendChild(item);
             });
-            lucide.createIcons();
         }
 
-        function switchTab(tab) {
-            ['grid', 'objects', 'style'].forEach(t => {
-                document.getElementById(`panel-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).className = 'flex-1 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition';
-            });
-            document.getElementById(`panel-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).className = 'flex-1 py-3 text-xs font-semibold uppercase tracking-wider text-blue-400 border-b-2 border-blue-500 transition';
-        }
-
-        function applyPreset(preset) {
-            if (preset === 'standard') {
-                state.xMin = -10; state.xMax = 10; state.xStep = 1; state.xLabelStep = 1;
-                state.yMin = -10; state.yMax = 10; state.yStep = 1; state.yLabelStep = 1;
-            } else if (preset === 'quadrant1') {
-                state.xMin = 0; state.xMax = 20; state.xStep = 2; state.xLabelStep = 2;
-                state.yMin = 0; state.yMax = 1000; state.yStep = 100; state.yLabelStep = 100;
+        function updateLatexLivePreview(text) {
+            const previewEl = document.getElementById('latexLivePreview');
+            if (!previewEl) return;
+            if (!text || text.trim() === '') {
+                previewEl.innerHTML = '<span class="text-slate-600 font-sans italic text-xs">Empty</span>';
+                return;
             }
-            
-            document.getElementById('xMin').value = state.xMin;
-            document.getElementById('xMax').value = state.xMax;
-            document.getElementById('xStep').value = state.xStep;
-            document.getElementById('xLabelStep').value = state.xLabelStep;
-            document.getElementById('yMin').value = state.yMin;
-            document.getElementById('yMax').value = state.yMax;
-            document.getElementById('yStep').value = state.yStep;
-            document.getElementById('yLabelStep').value = state.yLabelStep;
+            try { previewEl.innerHTML = katex.renderToString(text, { throwOnError: false }); } catch(e) { previewEl.textContent = text; }
+        }
+
+        function setLayoutMode(mode) {
+            config.layoutMode = mode;
+            const singleBtn = document.getElementById('modeSingleBtn');
+            const sheetBtn = document.getElementById('modeWorksheetBtn');
+
+            if (mode === 'single') {
+                singleBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all bg-blue-600 text-white shadow-sm flex items-center gap-1.5";
+                sheetBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5";
+            } else {
+                sheetBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all bg-blue-600 text-white shadow-sm flex items-center gap-1.5";
+                singleBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5";
+                switchTab('sheet');
+            }
 
             render();
         }
 
-        // --- Core SVG Render Engine ---
-        function render() {
-            // Read inputs
-            state.xMin = parseFloat(document.getElementById('xMin').value) || -10;
-            state.xMax = parseFloat(document.getElementById('xMax').value) || 10;
-            state.xStep = parseFloat(document.getElementById('xStep').value) || 1;
-            state.xLabelStep = parseFloat(document.getElementById('xLabelStep').value) || 1;
-
-            if (state.systemMode !== '1d') {
-                state.yMin = parseFloat(document.getElementById('yMin').value) || -10;
-                state.yMax = parseFloat(document.getElementById('yMax').value) || 10;
-                state.yStep = parseFloat(document.getElementById('yStep').value) || 1;
-                state.yLabelStep = parseFloat(document.getElementById('yLabelStep').value) || 1;
-            }
-
-            state.squareBoxes = document.getElementById('squareBoxes').checked;
-            state.transparentBg = document.getElementById('transparentBg').checked;
-            state.numberFont = document.getElementById('numberFont').value;
-            state.titleX = document.getElementById('titleX').value;
-            state.titleY = document.getElementById('titleY').value;
-
-            // Canvas dimensions
-            const width = 600;
-            const height = state.systemMode === '1d' ? 180 : 600;
-            const margin = { top: 40, right: 40, bottom: 50, left: 60 };
-
-            const plotWidth = width - margin.left - margin.right;
-            const plotHeight = height - margin.top - margin.bottom;
-
-            // Coordinate mapping functions
-            const toX = (val) => margin.left + ((val - state.xMin) / (state.xMax - state.xMin)) * plotWidth;
-            const toY = (val) => margin.top + plotHeight - ((val - state.yMin) / (state.yMax - state.yMin)) * plotHeight;
-
-            // Update footer stats
-            document.getElementById('stat-mode').textContent = `Mode: ${state.systemMode === '2d' ? 'Cartesian (2D)' : state.systemMode === 'complex' ? 'Complex (C)' : '1D Line'}`;
-            document.getElementById('stat-domain').textContent = `[${state.xMin}, ${state.xMax}]`;
-            document.getElementById('stat-range').textContent = state.systemMode === '1d' ? 'N/A' : `[${state.yMin}, ${state.yMax}]`;
-
-            // Canvas background wrapper
-            const wrapper = document.getElementById('canvas-wrapper');
-            if (state.transparentBg) {
-                wrapper.className = 'relative shadow-2xl rounded-lg p-2 checkerboard-bg';
-            } else {
-                wrapper.className = 'relative bg-white shadow-2xl rounded-lg p-2';
-            }
-
-            // Font class for labels
-            let fontCss = 'font-sans';
-            if (state.numberFont === 'serif') fontCss = 'font-serif-math';
-            else if (state.numberFont === 'mono') fontCss = 'font-mono-code';
-            else if (state.numberFont === 'cursive') fontCss = 'font-cursive';
-
-            let svg = `<svg id="grid-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" class="${fontCss}">`;
-            
-            if (!state.transparentBg) {
-                svg += `<rect width="${width}" height="${height}" fill="#ffffff"/>`;
-            }
-
-            // --- 1. Draw Grid Lines ---
-            if (state.systemMode !== '1d') {
-                // Vertical Grid Lines
-                for (let x = state.xMin; x <= state.xMax; x += state.xStep) {
-                    const cx = toX(x);
-                    svg += `<line x1="${cx}" y1="${margin.top}" x2="${cx}" y2="${height - margin.bottom}" stroke="#e2e8f0" stroke-width="1"/>`;
-                }
-                // Horizontal Grid Lines
-                for (let y = state.yMin; y <= state.yMax; y += state.yStep) {
-                    const cy = toY(y);
-                    svg += `<line x1="${margin.left}" y1="${cy}" x2="${width - margin.right}" y2="${cy}" stroke="#e2e8f0" stroke-width="1"/>`;
-                }
-            }
-
-            // --- 2. Draw Main Axes ---
-            const originX = Math.max(margin.left, Math.min(width - margin.right, toX(0)));
-            const originY = state.systemMode === '1d' ? margin.top + plotHeight / 2 : Math.max(margin.top, Math.min(height - margin.bottom, toY(0)));
-
-            // X Axis Line
-            svg += `<line x1="${margin.left}" y1="${originY}" x2="${width - margin.right}" y2="${originY}" stroke="#0f172a" stroke-width="2"/>`;
-
-            // Y Axis Line (if 2D or Complex)
-            if (state.systemMode !== '1d') {
-                svg += `<line x1="${originX}" y1="${margin.top}" x2="${originX}" y2="${height - margin.bottom}" stroke="#0f172a" stroke-width="2"/>`;
-            }
-
-            // --- 3. Tick Marks & Numbers (Strict Clean Snap) ---
-            // X Axis Labels
-            for (let x = state.xMin; x <= state.xMax; x += state.xLabelStep) {
-                const cx = toX(x);
-                svg += `<line x1="${cx}" y1="${originY - 4}" x2="${cx}" y2="${originY + 4}" stroke="#0f172a" stroke-width="1.5"/>`;
-                svg += `<text x="${cx}" y="${originY + 18}" font-size="11" fill="#1e293b" text-anchor="middle">${x}</text>`;
-            }
-
-            // Y Axis Labels
-            if (state.systemMode !== '1d') {
-                for (let y = state.yMin; y <= state.yMax; y += state.yLabelStep) {
-                    if (y === 0 && state.xMin <= 0 && state.xMax >= 0) continue; // Skip 0 if at origin
-                    const cy = toY(y);
-                    const label = state.systemMode === 'complex' ? `${y}i` : `${y}`;
-                    svg += `<line x1="${originX - 4}" y1="${cy}" x2="${originX + 4}" y2="${cy}" stroke="#0f172a" stroke-width="1.5"/>`;
-                    svg += `<text x="${originX - 8}" y="${cy + 4}" font-size="11" fill="#1e293b" text-anchor="end">${label}</text>`;
-                }
-            }
-
-            // --- 4. Custom Axis Titles ---
-            svg += `<text x="${width - margin.right}" y="${originY - 10}" font-size="13" font-weight="600" fill="#0f172a" text-anchor="end">${state.titleX}</text>`;
-            if (state.systemMode !== '1d') {
-                svg += `<text x="${originX + 10}" y="${margin.top + 10}" font-size="13" font-weight="600" fill="#0f172a">${state.titleY}</text>`;
-            }
-
-            // --- 5. Render Active Objects ---
-            state.objects.forEach(obj => {
-                if (obj.mode !== state.systemMode) return; // Mode isolation
-
-                if (obj.type === 'point') {
-                    const cx = toX(obj.x);
-                    const cy = toY(obj.y);
-                    svg += `<circle cx="${cx}" cy="${cy}" r="5" fill="${obj.color}"/>`;
-                } else if (obj.type === 'complex') {
-                    const cx = toX(obj.re);
-                    const cy = toY(obj.im);
-                    svg += `<line x1="${originX}" y1="${originY}" x2="${cx}" y2="${cy}" stroke="${obj.color}" stroke-width="2" stroke-dasharray="4"/>`;
-                    svg += `<circle cx="${cx}" cy="${cy}" r="5" fill="${obj.color}"/>`;
-                } else if (obj.type === 'function') {
-                    // Sample function plot
-                    let points = [];
-                    const steps = 200;
-                    for (let i = 0; i <= steps; i++) {
-                        const xVal = state.xMin + (i / steps) * (state.xMax - state.xMin);
-                        try {
-                            // Simple evaluator for x^2, x, etc.
-                            let cleanExpr = obj.expr.replace(/x/g, `(${xVal})`).replace(/\^/g, '**');
-                            let yVal = eval(cleanExpr);
-                            if (!isNaN(yVal) && yVal >= state.yMin && yVal <= state.yMax) {
-                                points.push(`${toX(xVal)},${toY(yVal)}`);
-                            }
-                        } catch(e) {}
-                    }
-                    if (points.length > 1) {
-                        svg += `<polyline points="${points.join(' ')}" fill="none" stroke="${obj.color}" stroke-width="2.5"/>`;
-                    }
-                } else if (obj.type === 'inequality1d') {
-                    const cx = toX(obj.val);
-                    const isInclusive = obj.op.includes('=');
-                    const isGreater = obj.op.includes('>');
-
-                    // Ray line
-                    const endX = isGreater ? width - margin.right : margin.left;
-                    svg += `<line x1="${cx}" y1="${originY}" x2="${endX}" y2="${originY}" stroke="${obj.color}" stroke-width="4"/>`;
-                    
-                    // Endpoint circle
-                    if (isInclusive) {
-                        svg += `<circle cx="${cx}" cy="${originY}" r="6" fill="${obj.color}"/>`;
-                    } else {
-                        svg += `<circle cx="${cx}" cy="${originY}" r="6" fill="#ffffff" stroke="${obj.color}" stroke-width="3"/>`;
-                    }
+        function setGridGridCount(num) {
+            config.gridCount = num;
+            [1, 2, 4, 6].forEach(n => {
+                const btn = document.getElementById(`gridCount-${n}`);
+                if (btn) {
+                    if (n === num) btn.className = "p-2 bg-blue-600 text-white rounded-lg text-center text-xs transition-all font-medium";
+                    else btn.className = "p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 rounded-lg text-center text-xs transition-all font-medium";
                 }
             });
-
-            svg += `</svg>`;
-            document.getElementById('grid-container').innerHTML = svg;
+            updateWorksheetPromptInputs();
+            render();
         }
 
-        // --- Export Functions ---
+        function updateWorksheetHeader() {
+            config.wsTitle = document.getElementById('wsTitle').value;
+            config.wsSubtitle = document.getElementById('wsSubtitle').value;
+            document.getElementById('wsTitleText').innerText = config.wsTitle;
+            document.getElementById('wsSubtitleText').innerText = config.wsSubtitle;
+        }
+
+        function updateWorksheetPromptInputs() {
+            const container = document.getElementById('worksheetPromptsContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < config.gridCount; i++) {
+                const div = document.createElement('div');
+                div.className = "space-y-1";
+                div.innerHTML = `
+                    <label class="text-[11px] text-slate-400 block">Problem ${i + 1} Prompt</label>
+                    <input type="text" value="${config.prompts[i] || `${i + 1}. Graph the equation:`}" oninput="config.prompts[${i}] = this.value; render()" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function switchTab(tabName) {
+            ['grid', 'style', 'plots', 'sheet'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                if (t === tabName) {
+                    btn.className = 'flex-1 py-3 px-2 border-b-2 border-blue-500 text-blue-400 flex items-center justify-center gap-1.5 transition-all';
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = 'flex-1 py-3 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all';
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function zoomPreview(factor) {
+            currentZoom *= factor;
+            document.getElementById('svgContainerWrapper').style.transform = `scale(${currentZoom})`;
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            document.getElementById('svgContainerWrapper').style.transform = `scale(1)`;
+        }
+
+        function resetAll() {
+            plots = [];
+            config.layoutMode = 'single';
+            config.arrowPosition = 'none';
+            config.arrowStyle = 'triangle';
+            config.arrowSize = 'medium';
+            applyPreset('standard');
+            setTheme('classic');
+            resetZoom();
+            showToast('Reset all grid settings');
+        }
+
+        function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); }
+        function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
+
+        function setExportScale(scale) {
+            exportScale = scale;
+            [1, 2, 4].forEach(s => {
+                const btn = document.getElementById(`scale-${s}`);
+                if (s === scale) btn.className = "p-2.5 rounded-lg border border-blue-500 bg-blue-500/10 text-xs font-medium text-center transition-all text-blue-400";
+                else btn.className = "p-2.5 rounded-lg border border-slate-800 bg-slate-950 hover:border-blue-500 text-xs font-medium text-center transition-all text-slate-300";
+            });
+        }
+
+        function downloadSVG() {
+            const wrapper = document.getElementById('svgContainerWrapper');
+            const svgEl = wrapper.querySelector('svg');
+            if (!svgEl) return;
+
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `coordinate-grid-${Date.now()}.svg`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Downloaded SVG Vector!');
+        }
+
         function downloadPNG() {
-            const svgElement = document.getElementById('grid-svg');
-            const svgData = new XMLSerializer().serializeToString(svgElement);
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
+            const wrapper = document.getElementById('svgContainerWrapper');
+            const svgEl = wrapper.querySelector('svg');
+            if (!svgEl) return;
 
-            canvas.width = svgElement.getAttribute('width') * 2; // 2x High DPI
-            canvas.height = svgElement.getAttribute('height') * 2;
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            
+            const width = svgEl.getAttribute("width") * exportScale;
+            const height = svgEl.getAttribute("height") * exportScale;
+            canvas.width = width;
+            canvas.height = height;
+
+            const img = new Image();
+            const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(svgBlob);
 
             img.onload = function() {
-                ctx.scale(2, 2);
-                ctx.drawImage(img, 0, 0);
-                const a = document.createElement('a');
-                a.download = 'coordinate-grid.png';
-                a.href = canvas.toDataURL('image/png');
-                a.click();
+                if (config.transparentBg) ctx.clearRect(0, 0, width, height);
+                else { ctx.fillStyle = config.colorBg; ctx.fillRect(0, 0, width, height); }
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const pngUrl = canvas.toDataURL("image/png");
+                const link = document.createElement("a");
+                link.href = pngUrl;
+                link.download = `coordinate-grid-${exportScale}x.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+                showToast(`Downloaded PNG (${width}x${height}px)`);
             };
 
-            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            img.src = url;
         }
 
-        function copyCanvasToClipboard() {
-            const svgElement = document.getElementById('grid-svg');
-            const svgData = new XMLSerializer().serializeToString(svgElement);
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+        async function copyImageToClipboard() {
+            const wrapper = document.getElementById('svgContainerWrapper');
+            const svgEl = wrapper.querySelector('svg');
+            if (!svgEl) return;
+
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            
+            const width = svgEl.getAttribute("width") * exportScale;
+            const height = svgEl.getAttribute("height") * exportScale;
+            canvas.width = width;
+            canvas.height = height;
+
             const img = new Image();
+            const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(svgBlob);
 
-            canvas.width = svgElement.getAttribute('width') * 2;
-            canvas.height = svgElement.getAttribute('height') * 2;
+            img.onload = async function() {
+                if (config.transparentBg) ctx.clearRect(0, 0, width, height);
+                else { ctx.fillStyle = config.colorBg; ctx.fillRect(0, 0, width, height); }
+                ctx.drawImage(img, 0, 0, width, height);
+                URL.revokeObjectURL(url);
 
-            img.onload = function() {
-                ctx.scale(2, 2);
-                ctx.drawImage(img, 0, 0);
-                canvas.toBlob(blob => {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) return;
                     try {
-                        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                        const btn = document.getElementById('copyImageBtn');
-                        btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-400"></i><span class="text-emerald-400">Copied!</span>`;
-                        lucide.createIcons();
-                        setTimeout(() => {
-                            btn.innerHTML = `<i data-lucide="copy" class="w-4 h-4"></i><span>Copy Image</span>`;
-                            lucide.createIcons();
-                        }, 2000);
-                    } catch(err) {
-                        alert("Clipboard copy failed. Try using Export PNG instead.");
+                        if (navigator.clipboard && window.ClipboardItem) {
+                            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                            closeExportModal();
+                            showToast('PNG copied to clipboard!');
+                        }
+                    } catch (err) {
+                        closeExportModal();
+                        showToast('Copied SVG markup code to clipboard!');
                     }
-                });
+                }, 'image/png');
             };
 
-            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            img.src = url;
         }
 
-        // Initial Load
-        setSystemMode('2d');
+        function printWorksheet() {
+            closeExportModal();
+            window.print();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 3000);
+        }
+
+        window.onload = function() {
+            applyPreset('standard');
+            setTheme('classic');
+            updateWorksheetPromptInputs();
+            updateLatexLivePreview('y \\le 2x - 1');
+        };
     </script>
 </body>
 </html>
