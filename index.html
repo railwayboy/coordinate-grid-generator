@@ -254,16 +254,16 @@
                     <!-- Axis Title Customization -->
                     <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-3">
                         <span class="font-semibold text-xs text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                            <i class="fa-solid fa-signature"></i> Axis Title Labels
+                            <i class="fa-solid fa-signature"></i> Axis Title Labels (LaTeX Support)
                         </span>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="text-[11px] text-slate-400 block mb-1">X-Axis Title</label>
-                                <input type="text" id="xAxisLabel" value="x" oninput="updateConfig('xAxisLabel', this.value)" placeholder="e.g. x, Re, t" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                <input type="text" id="xAxisLabel" value="x" oninput="updateConfig('xAxisLabel', this.value)" placeholder="e.g. x, \text{Re}, t" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                             </div>
                             <div id="yAxisTitleGroup">
                                 <label class="text-[11px] text-slate-400 block mb-1">Y-Axis Title</label>
-                                <input type="text" id="yAxisLabel" value="y" oninput="updateConfig('yAxisLabel', this.value)" placeholder="e.g. y, Im, f(x)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                <input type="text" id="yAxisLabel" value="y" oninput="updateConfig('yAxisLabel', this.value)" placeholder="e.g. y, \text{Im}, f(x)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                             </div>
                         </div>
                     </div>
@@ -502,7 +502,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label</label>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX Allowed)</label>
                                     <input type="text" id="ptLabel" value="P_1(3, 4)" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. A, P_1, (3, 4)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
@@ -511,7 +511,15 @@
                             <div id="inputs-function" class="hidden space-y-2">
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-mono text-blue-400 font-bold">y =</span>
-                                    <input type="text" id="funcExpr" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. (1/2)x^2 - 4" value="0.5x^2 - 4" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                    <input type="text" id="funcExpr" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. |x - 2| + 1, \sqrt{x}, 0.5x^2 - 4" value="|x - 2| + 1" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                </div>
+                                <!-- Preset Function Help Chips -->
+                                <div class="flex flex-wrap gap-1 pt-1">
+                                    <button type="button" onclick="setFuncPreset('|x|')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-mono">|x|</button>
+                                    <button type="button" onclick="setFuncPreset('\\sqrt{x}')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-mono">√x</button>
+                                    <button type="button" onclick="setFuncPreset('2|x - 3| - 4')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-mono">2|x-3|-4</button>
+                                    <button type="button" onclick="setFuncPreset('\\sqrt{x + 4}')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-mono">√(x+4)</button>
+                                    <button type="button" onclick="setFuncPreset('x^2 - 4')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-mono">x²-4</button>
                                 </div>
                             </div>
 
@@ -541,7 +549,7 @@
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-slate-400 block mb-1">Expression f(x) or f(y)</label>
-                                    <input type="text" id="ineqExpr" oninput="updateLatexLivePreview(document.getElementById('ineqVar').value + ' ' + document.getElementById('ineqOp').value + ' ' + this.value)" placeholder="e.g. 2x - 1, x^2 - 3" value="2x - 1" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
+                                    <input type="text" id="ineqExpr" oninput="updateLatexLivePreview(document.getElementById('ineqVar').value + ' ' + document.getElementById('ineqOp').value + ' ' + this.value)" placeholder="e.g. 2x - 1, |x| - 3, \sqrt{x}" value="2x - 1" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
 
@@ -596,7 +604,7 @@
                                     </label>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label</label>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Point Label (LaTeX)</label>
                                     <input type="text" id="cplxLabel" value="z_1 = 3 + 4i" oninput="updateLatexLivePreview(this.value)" placeholder="e.g. z_1, 3+4i" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-mono focus:border-blue-500 outline-none">
                                 </div>
                             </div>
@@ -611,7 +619,7 @@
 
                             <!-- Live KaTeX Expression Preview Box -->
                             <div class="mt-2 p-2 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between">
-                                <span class="text-[10px] text-slate-500 font-medium">KaTeX Sidebar Preview:</span>
+                                <span class="text-[10px] text-slate-500 font-medium">LaTeX Preview:</span>
                                 <div id="latexLivePreview" class="text-sm font-serif text-blue-300"></div>
                             </div>
                         </div>
@@ -832,7 +840,7 @@
         let selectedPlotType = 'point';
         let selectedColor = '#000000';
 
-        // Native SVG Math Text Renderer (Replaces foreignObject to guarantee 100% working PNG rasterization)
+        // Native SVG Math Text Renderer (Guarantees crisp vector and raster exports)
         function renderNativeMathSVG(parentGroup, rawText, x, y, color, fontSize = 13, anchor = 'middle') {
             if (!rawText || rawText.trim() === '') return;
             const textEl = document.createElementNS(svgNS, "text");
@@ -854,7 +862,6 @@
                 .replace(/\\cdot/g, '·')
                 .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)');
 
-            // Check if text has math variables/subscripts/superscripts
             if (clean.includes('^') || clean.includes('_') || /[a-zA-Z]/.test(clean)) {
                 const parts = clean.split(/(\^[0-9a-zA-Z]+|_[0-9a-zA-Z]+)/g);
                 parts.forEach(part => {
@@ -887,21 +894,46 @@
         function parseLatexToJS(expr) {
             if (!expr) return '0';
             let js = expr.trim();
+
+            // Handle LaTeX fractions \frac{a}{b} -> ((a)/(b))
             while (js.includes('\\frac')) {
                 js = js.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '(($1)/($2))');
             }
+
+            // Handle LaTeX square roots \sqrt{a} -> Math.sqrt(a)
             while (js.includes('\\sqrt')) {
                 js = js.replace(/\\sqrt\s*\{([^{}]+)\}/g, 'Math.sqrt($1)');
             }
+            js = js.replace(/sqrt\s*\(([^()]+)\)/g, 'Math.sqrt($1)');
+
+            // Handle LaTeX absolute values \left|x\right| or |x|
+            js = js.replace(/\\left\|/g, '|').replace(/\\right\|/g, '|');
+            
+            // Convert pipe-delimited absolute values e.g. |x - 2| or 2|x| -> Math.abs(...)
+            // Repeat regex replacement to support nested/multiple absolute values
+            let prevJs = '';
+            while (prevJs !== js) {
+                prevJs = js;
+                js = js.replace(/\|([^|]+)\|/g, 'Math.abs($1)');
+            }
+            js = js.replace(/abs\s*\(([^()]+)\)/g, 'Math.abs($1)');
+
+            // Constants & Trigonometric/Log functions
             js = js.replace(/\\pi/g, 'Math.PI');
             js = js.replace(/\\sin/g, 'Math.sin');
             js = js.replace(/\\cos/g, 'Math.cos');
             js = js.replace(/\\tan/g, 'Math.tan');
+            js = js.replace(/\\ln/g, 'Math.log');
+
+            // Exponents
             js = js.replace(/\^\{([^}]+)\}/g, '**($1)');
             js = js.replace(/\^([0-9a-zA-Z\.\-]+)/g, '**$1');
-            js = js.replace(/(\d)\s*([xXyY\(])/g, '$1*$2');
-            js = js.replace(/(\))\s*([xXyY\d\(])/g, '$1*$2');
-            js = js.replace(/([xXyY])\s*([xXyY])/g, '$1*$2');
+
+            // Insert implicit multiplication e.g., 2x -> 2*x, 3Math -> 3*Math, (x)(y) -> (x)*(y)
+            js = js.replace(/(\d)\s*([xXyY\(Math])/g, '$1*$2');
+            js = js.replace(/(\))\s*([xXyY\d\(Math])/g, '$1*$2');
+            js = js.replace(/([xXyY])\s*([xXyYMath])/g, '$1*$2');
+
             return js;
         }
 
@@ -930,7 +962,6 @@
             if (config.transparentBg) svg.classList.add('checkerboard-bg');
             svg.style.borderRadius = "8px";
 
-            // Padding configured to give clean margins for multi-digit labels (e.g. 1000)
             const paddingLeft = 65;
             const paddingRight = 45;
             const paddingTop = 45;
@@ -968,7 +999,6 @@
 
             const defs = document.createElementNS(svgNS, "defs");
 
-            // Embed fonts and styling rules cleanly in defs for vector export
             const style = document.createElementNS(svgNS, "style");
             style.textContent = `
                 text { font-family: ${config.labelFontFamily}; }
@@ -1025,6 +1055,7 @@
 
             svg.appendChild(defs);
 
+            // Major & Minor Grid Lines
             if (!is1D && config.gridType !== 'none') {
                 if (config.subdivisions > 1) {
                     const gMinor = document.createElementNS(svgNS, "g");
@@ -1074,7 +1105,6 @@
             const originPx = toPx(0, 0);
             const axisOverhang = 14;
 
-            // X-Axis Line
             if (config.showXAxis) {
                 const xAxis = document.createElementNS(svgNS, "line");
                 const p1 = toPx(config.xMin, 0);
@@ -1100,23 +1130,22 @@
                 gAxes.appendChild(xAxis);
             }
 
-            // Y-Axis Line
             if (!is1D && config.showYAxis) {
                 const yAxis = document.createElementNS(svgNS, "line");
-                const p1 = toPx(0, config.yMin); // Bottom
-                const p2 = toPx(0, config.yMax); // Top
+                const p1 = toPx(0, config.yMin);
+                const p2 = toPx(0, config.yMax);
                 const clampedX = Math.min(Math.max(p1.x, offsetX), offsetX + plotW);
 
-                let y1 = Math.min(offsetY + plotH, p1.y); // Bottom
-                let y2 = Math.max(offsetY, p2.y); // Top
+                let y1 = Math.min(offsetY + plotH, p1.y);
+                let y2 = Math.max(offsetY, p2.y);
 
                 if (config.showArrows && config.arrowPosition !== 'none') {
                     if (config.arrowPosition === 'both' && config.yMin < 0) {
-                        y1 += axisOverhang; // Extend downwards
+                        y1 += axisOverhang;
                         yAxis.setAttribute("marker-start", `url(#arrow-start-${gridIndex})`);
                     }
                     if (config.arrowPosition === 'positive' || config.arrowPosition === 'both') {
-                        y2 -= axisOverhang; // Extend upwards
+                        y2 -= axisOverhang;
                         yAxis.setAttribute("marker-end", `url(#arrow-end-${gridIndex})`);
                     }
                 }
@@ -1318,14 +1347,14 @@
                 else if (plot.type === 'inequality') {
                     if (config.planeType === 'numberline') return;
                     const isVarY = (plot.var || 'y') === 'y';
-                    const samples = 250;
+                    const samples = 400;
                     const curvePts = [];
 
                     if (isVarY) {
                         for (let i = 0; i <= samples; i++) {
                             const xVal = config.xMin + (i / samples) * xRange;
                             const yVal = evalFunction(plot.expr, xVal, 'x');
-                            if (!isNaN(yVal)) {
+                            if (typeof yVal === 'number' && !isNaN(yVal) && isFinite(yVal)) {
                                 curvePts.push({ x: xVal, y: yVal, px: toPx(xVal, yVal) });
                             }
                         }
@@ -1373,7 +1402,7 @@
                     const path = document.createElementNS(svgNS, "path");
                     let d = "";
                     let isDrawing = false;
-                    const samples = 300;
+                    const samples = 500;
 
                     for (let i = 0; i <= samples; i++) {
                         const xVal = config.xMin + (i / samples) * xRange;
@@ -1382,7 +1411,9 @@
                             const pt = toPx(xVal, yVal);
                             if (!isDrawing) { d += `M ${pt.x} ${pt.y} `; isDrawing = true; }
                             else { d += `L ${pt.x} ${pt.y} `; }
-                        } else { isDrawing = false; }
+                        } else { 
+                            isDrawing = false; 
+                        }
                     }
 
                     if (d) {
@@ -1516,8 +1547,8 @@
 
                 setPlotType('complex');
 
-                config.xAxisLabel = 'Re';
-                config.yAxisLabel = 'Im';
+                config.xAxisLabel = '\\text{Re}';
+                config.yAxisLabel = '\\text{Im}';
                 document.getElementById('xAxisLabel').value = config.xAxisLabel;
                 document.getElementById('yAxisLabel').value = config.yAxisLabel;
             } else {
@@ -1541,6 +1572,14 @@
             }
 
             render();
+        }
+
+        function setFuncPreset(presetStr) {
+            const funcInput = document.getElementById('funcExpr');
+            if (funcInput) {
+                funcInput.value = presetStr;
+                updateLatexLivePreview(presetStr);
+            }
         }
 
         function updateConfig(key, value) {
@@ -2052,7 +2091,7 @@
             applyPreset('standard');
             setTheme('classic');
             updateWorksheetPromptInputs();
-            updateLatexLivePreview('y \\le 2x - 1');
+            updateLatexLivePreview('y = |x - 2| + 1');
         };
     </script>
 </body>
